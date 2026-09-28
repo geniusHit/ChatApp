@@ -12,6 +12,8 @@ const Home = () => {
     const [messages, setMessages] = useState([])
     const [user, setUser] = useState()
     const [IP, setIP] = useState()
+    const [newUserEmail, setNewUserEmail] = useState()
+    const [showMessage, setShowMessage] = useState(false)
 
     useEffect(() => {
         getIP()
@@ -33,7 +35,7 @@ const Home = () => {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({IP: IP})
+                body: JSON.stringify({ IP: IP })
             })
 
             const result = await loginUser.json()
@@ -51,6 +53,30 @@ const Home = () => {
 
     console.log("user : ", user)
 
+    console.log("newUserEmail : ", newUserEmail)
+
+    const addContact = async ()=> {
+        try{
+            const getProvidedContact = await fetch(`${API_URL}/get-user`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ email: newUserEmail })
+            })
+
+            if(!getProvidedContact.ok){
+                throw new Error("User not available.")
+            }
+
+            const result = await getProvidedContact.json()
+            console.log("result : ", result)
+        }
+        catch(err) {
+            console.log(`User not available ${err.message}.`)
+        }
+    }
+
     return (
         <div>
             <Link to="/">Home</Link>
@@ -58,6 +84,10 @@ const Home = () => {
             <Link to="/signup">Signup</Link>
 
             <h2>Chat App</h2>
+
+            <div>{user?.name}</div> <br /><br />
+
+            <button onClick={()=> setShowMessage(true)}>New Contact</button> <br /><br />
 
             <div>
                 {messages.map((msg, index) => (
@@ -73,6 +103,27 @@ const Home = () => {
             <button onClick={sendMessage}>
                 Send
             </button>
+
+
+            {showMessage === true
+                &&
+                <div className="modal show d-block" tabIndex="-1">
+                    <div className="modal-dialog">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">Add Contact</h5>
+                                <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" onClick={() => setShowMessage(false)}></button>
+                            </div>
+                            <div className="modal-body">
+                                <p><input type='email' placeholder='Email' className='w-full outline-[#6c757d] border p-1 rounded-1 border-[#6c757d]' onChange={(e)=> setNewUserEmail(e.target.value)} /></p>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" onClick={addContact}>Go</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
     )
 }

@@ -1,7 +1,11 @@
 import { Link } from "react-router-dom"
 import { useForm } from "react-hook-form";
 
-function Signup(data) {
+function Signup() {
+  const API_URL =
+    window.location.hostname === "localhost"
+      ? "http://localhost:8000"
+      : "https://rental-project-backend.vercel.app";
 
   const {
     register,
@@ -13,7 +17,7 @@ function Signup(data) {
   const onSubmit = async (data) => {
     console.log(data);
 
-    const addUser = await fetch(`${data?.API_URL}/add-user`, {
+    const addUser = await fetch(`${API_URL}/add-user`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -61,7 +65,6 @@ function Signup(data) {
             )}
           </div>
 
-          {/* Gender */}
           <div className="mb-3">
             <label className="form-label">Gender</label>
 
@@ -84,7 +87,6 @@ function Signup(data) {
             )}
           </div>
 
-          {/* Age */}
           <div className="mb-3">
             <label className="form-label">Age</label>
 
@@ -94,16 +96,35 @@ function Signup(data) {
               placeholder="Enter your age"
               {...register("age", {
                 required: "Age is required",
-                min: {
-                  value: 13,
-                  message: "Age must be at least 13",
-                },
               })}
             />
 
             {errors.age && (
               <small className="text-danger">
                 {errors.age.message}
+              </small>
+            )}
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label">Email</label>
+
+            <input
+              type="email"
+              className="form-control"
+              placeholder="Email"
+              {...register("email", {
+                required: "Email is required",
+                min: {
+                  value: 10,
+                  message: "Email must be at least 10 characters.",
+                },
+              })}
+            />
+
+            {errors.age && (
+              <small className="text-danger">
+                {errors.email.message}
               </small>
             )}
           </div>
@@ -118,7 +139,7 @@ function Signup(data) {
               {...register("password", {
                 required: "Password is required",
                 min: {
-                  value: 13,
+                  value: 4,
                   message: "Password must be at least 4 characters.",
                 },
               })}

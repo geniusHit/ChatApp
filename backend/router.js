@@ -10,4 +10,8 @@ router.post("/save-user-jwt", controller.saveUserJwt)
 
 router.post("/get-login", controller.getLoginUser)
 
+router.post("/get-user", controller.getUser)
+
+router.post("/add-contact", controller.oneToOneContacts)
+
 module.exports = router

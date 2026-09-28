@@ -13,6 +13,9 @@ const userSchema = mongoose.Schema({
     age: {
         type: Number
     },
+    email: {
+        type: String
+    },
     password: {
         type: String
     }
@@ -29,6 +32,22 @@ exports.addUser = async (req, res) => {
     }
     catch (err) {
         res.send({ success: false, message: `User not added. ${err.message}` })
+    }
+}
+
+exports.getUser = async (req, res) => {
+    try{
+        const { email } = req.body
+        const user = await usersModel.findOne({email: email})
+
+        if(user){
+            res.status(200).json(user)
+        } else {
+            res.json({success: false, message: `No User available for provided email.`})
+        }
+    }
+    catch(err) {
+        res.json({success: false, message: `No User available for provided email. ${err.message}`})
     }
 }
 
@@ -83,5 +102,49 @@ exports.getLoginUser = async (req, res) => {
     }
     catch (err) {
         console.log(`Unable to find login user ${err.message}`)
+    }
+}
+
+
+const oneToOneContactsSchema = mongoose.Schema({
+    contact1: {
+        name: {
+            type: String
+        },
+        gender: {
+            type: String
+        },
+        age: {
+            type: Number
+        },
+        email: {
+            type: String
+        },
+    },
+
+    contact2: {
+        name: {
+            type: String
+        },
+        gender: {
+            type: String
+        },
+        age: {
+            type: Number
+        },
+        email: {
+            type: String
+        },
+    }
+})
+const oneToOneContactsModel = mongoose.model("oneToOneContacts", oneToOneContactsSchema)
+exports.oneToOneContacts = async (req, res) => {
+    try {
+        const newContacts = new oneToOneContactsModel(req.body)
+        await newContacts.save()
+
+        res.json(newContacts)
+    } catch (err) {
+        console.log(`Contacts not saved : ${err.message}`)
     }
 }
