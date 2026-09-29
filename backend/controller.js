@@ -36,18 +36,19 @@ exports.addUser = async (req, res) => {
 }
 
 exports.getUser = async (req, res) => {
-    try{
+    try {
         const { email } = req.body
-        const user = await usersModel.findOne({email: email})
+        console.log("email : ", email)
+        const user = await usersModel.findOne({ email: email })
 
-        if(user){
+        if (user) {
             res.status(200).json(user)
         } else {
-            res.json({success: false, message: `No User available for provided email.`})
+            res.status(400).json({ success: false, message: `No User available for provided email.` })
         }
     }
-    catch(err) {
-        res.json({success: false, message: `No User available for provided email. ${err.message}`})
+    catch (err) {
+        res.json({ success: false, message: `No User available for provided email. ${err.message}` })
     }
 }
 
@@ -76,7 +77,7 @@ const usersJwtSchema = mongoose.Schema({
         type: String
     }
 })
-const usersJwtModel = mongoose.model("usersJwt", usersJwtSchema)
+const usersJwtModel = mongoose.model("loggedusers", usersJwtSchema)
 exports.saveUserJwt = async (req, res) => {
     try {
         const { user, IP } = req.body
@@ -120,6 +121,17 @@ const oneToOneContactsSchema = mongoose.Schema({
         email: {
             type: String
         },
+        chats: {
+            message: {
+                type: [String]
+            },
+            to: {
+                type: [String]
+            },
+            createdAt: {
+                type: [Date]
+            }
+        }
     },
 
     contact2: {
@@ -135,6 +147,17 @@ const oneToOneContactsSchema = mongoose.Schema({
         email: {
             type: String
         },
+        chats: {
+            message: {
+                type: [String]
+            },
+            to: {
+                type: [String]
+            },
+            createdAt: {
+                type: [Date]
+            }
+        }
     }
 })
 const oneToOneContactsModel = mongoose.model("oneToOneContacts", oneToOneContactsSchema)
@@ -146,5 +169,29 @@ exports.oneToOneContacts = async (req, res) => {
         res.json(newContacts)
     } catch (err) {
         console.log(`Contacts not saved : ${err.message}`)
+    }
+}
+
+exports.sendMessage = async (req, res) => {
+    try {
+        console.log("req.body from sendMessage : ", req.body)
+        const { contact, message } = req.body
+        const send = await oneToOneContactsModel.findOneAndUpdate({ "contact1.email": contact?.contact1?.email }, { $push: { "contact1.chats": { message: message, to: contact?.contact2?.email, createdAt: new Date() } } })
+        console.log("send : ", send)
+
+        res.json({ success: true, message: `Message sent` })
+    } catch (err) {
+        res.json({ success: false, message: `Unable to send message. ${err.message}` })
+    }
+}
+
+exports.getContacts = async (req, res) => {
+    try {
+        const { email } = req.body;
+        console.log("req.body : ", req.body)
+        const contacts = await oneToOneContactsModel.find({ "contact1.email": email })
+        res.json(contacts)
+    } catch (err) {
+        res.send({ success: false, message: "Cannot get contacts" })
     }
 }

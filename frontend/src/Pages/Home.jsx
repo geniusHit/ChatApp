@@ -8,7 +8,6 @@ const Home = () => {
             ? "http://localhost:8000"
             : "https://rental-project-backend.vercel.app";
 
-    const [message, setMessage] = useState("")
     const [messages, setMessages] = useState([])
     const [user, setUser] = useState()
     const [IP, setIP] = useState()
@@ -24,10 +23,6 @@ const Home = () => {
         setIP(data.ip)
     };
 
-    const sendMessage = () => {
-        setMessages((prev) => [...prev, message]);
-    };
-
     const loginUser = async () => {
         if (IP !== undefined) {
             const loginUser = await fetch(`${API_URL}/get-login`, {
@@ -40,7 +35,7 @@ const Home = () => {
 
             const result = await loginUser.json()
             console.log("result : ", result)
-            const decodedUser = jwtDecode(result?.jwt)
+            const decodedUser = result?.jwt ? jwtDecode(result?.jwt) : []
             setUser(decodedUser)
         }
     }
@@ -55,8 +50,8 @@ const Home = () => {
 
     console.log("newUserEmail : ", newUserEmail)
 
-    const addContact = async ()=> {
-        try{
+    const addContact = async () => {
+        try {
             const getProvidedContact = await fetch(`${API_URL}/get-user`, {
                 method: "POST",
                 headers: {
@@ -65,15 +60,25 @@ const Home = () => {
                 body: JSON.stringify({ email: newUserEmail })
             })
 
-            if(!getProvidedContact.ok){
+            if (!getProvidedContact.ok) {
                 throw new Error("User not available.")
             }
 
             const result = await getProvidedContact.json()
             console.log("result : ", result)
+
+            const otoContact = await fetch(`${API_URL}/oto-contact`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ contact1: user, contact2: result })
+            })
+
+            setNewUserEmail("")
         }
-        catch(err) {
-            console.log(`User not available ${err.message}.`)
+        catch (err) {
+            console.log(`User not available ${err.message}`)
         }
     }
 
@@ -82,28 +87,19 @@ const Home = () => {
             <Link to="/">Home</Link>
             <Link to="/login">Login</Link>
             <Link to="/signup">Signup</Link>
+            <Link to="/ono-chat">One on one chat</Link>
 
             <h2>Chat App</h2>
 
             <div>{user?.name}</div> <br /><br />
 
-            <button onClick={()=> setShowMessage(true)}>New Contact</button> <br /><br />
+            <button onClick={() => setShowMessage(true)}>New Contact</button> <br /><br />
 
             <div>
                 {messages.map((msg, index) => (
                     <p key={index}>{msg}</p>
                 ))}
             </div>
-
-            <input
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-            />
-
-            <button onClick={sendMessage}>
-                Send
-            </button>
-
 
             {showMessage === true
                 &&
@@ -115,7 +111,7 @@ const Home = () => {
                                 <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" onClick={() => setShowMessage(false)}></button>
                             </div>
                             <div className="modal-body">
-                                <p><input type='email' placeholder='Email' className='w-full outline-[#6c757d] border p-1 rounded-1 border-[#6c757d]' onChange={(e)=> setNewUserEmail(e.target.value)} /></p>
+                                <p><input type='email' placeholder='Email' className='w-full outline-[#6c757d] border p-1 rounded-1 border-[#6c757d]' onChange={(e) => setNewUserEmail(e.target.value)} /></p>
                             </div>
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" onClick={addContact}>Go</button>

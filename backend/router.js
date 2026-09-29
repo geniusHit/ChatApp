@@ -12,6 +12,10 @@ router.post("/get-login", controller.getLoginUser)
 
 router.post("/get-user", controller.getUser)
 
-router.post("/add-contact", controller.oneToOneContacts)
+router.post("/get-contacts", controller.getContacts)
+
+router.post("/oto-contact", controller.oneToOneContacts)
+
+router.post("/send-message", controller.sendMessage)
 
 module.exports = router
