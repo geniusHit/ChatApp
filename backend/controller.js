@@ -195,3 +195,14 @@ exports.getContacts = async (req, res) => {
         res.send({ success: false, message: "Cannot get contacts" })
     }
 }
+
+exports.getChats = async (req, res) => {
+    try {
+        const { email } = req.body
+        const chats = await oneToOneContactsModel.find({"contact1.email": email})
+
+        res.json(chats)
+    } catch (err) {
+        res.json({success: false, message: `Couldn't get chats ${err.message}`})
+    }
+}

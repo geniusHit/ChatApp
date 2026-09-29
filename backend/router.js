@@ -18,4 +18,6 @@ router.post("/oto-contact", controller.oneToOneContacts)
 
 router.post("/send-message", controller.sendMessage)
 
+router.post("/get-chats", controller.getChats)
+
 module.exports = router
