@@ -1,6 +1,7 @@
 require("dotenv").config()
 const mongoose = require("mongoose")
 const jwt = require("jsonwebtoken")
+const { MongoCryptInvalidArgumentError } = require("mongodb")
 const JWT_SECRET = process.env.JWT_SECRET
 
 const userSchema = mongoose.Schema({
@@ -176,7 +177,7 @@ exports.sendMessage = async (req, res) => {
     try {
         console.log("req.body from sendMessage : ", req.body)
         const { contact, message } = req.body
-        const send = await oneToOneContactsModel.findOneAndUpdate({ "contact1.email": contact?.contact1?.email }, { $push: { "contact1.chats": { message: message, to: contact?.contact2?.email, createdAt: new Date() } } })
+        const send = await oneToOneContactsModel.findOneAndUpdate({ "contact1.email": contact?.contact1?.email, "contact2.email": contact?.contact2?.email }, { $push: { "contact1.chats": { message: message, to: contact?.contact2?.email, createdAt: new Date() } } })
         console.log("send : ", send)
 
         res.json({ success: true, message: `Message sent` })
@@ -198,8 +199,15 @@ exports.getContacts = async (req, res) => {
 
 exports.getChats = async (req, res) => {
     try {
-        const { email } = req.body
-        const chats = await oneToOneContactsModel.find({"contact1.email": email})
+        const { emails } = req.body
+        let conditions=[];
+        emails.map((em) => {
+            conditions = [...conditions, {"contact1.email": em[0], "contact2.email": em[1]}]
+        })
+        console.log("conditions : ", conditions)
+        console.log("emails : ", emails)
+        const chats = await oneToOneContactsModel.find({$or: conditions})
+        console.log("chats : ", chats)
 
         res.json(chats)
     } catch (err) {

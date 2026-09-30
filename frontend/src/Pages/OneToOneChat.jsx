@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { jwtDecode } from "jwt-decode"
 import io from "socket.io-client";
+import { Link } from 'react-router-dom';
 
 const OneToOneChat = () => {
   const API_URL =
@@ -12,6 +13,7 @@ const OneToOneChat = () => {
   const [user, setUser] = useState(null)
   const [IP, setIP] = useState("")
   const [message, setMessage] = useState("")
+  const [messages, setMessages] = useState([])
   const [allContacts, setAllContacts] = useState([])
   const [chats, setChats] = useState([])
 
@@ -76,13 +78,26 @@ const OneToOneChat = () => {
       setAllContacts(Array.isArray(contactsData) ? contactsData : []);
 
       // Get chats
+      const contactEmails = contactsData.map((c) => {
+        return [c?.contact1?.email, c?.contact2?.email]
+      })
+      // console.log("contactEmails : ", contactEmails)
       const chatsRes = await fetch(`${API_URL}/get-chats`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email }),
+        body: JSON.stringify({ emails: contactEmails }),
       });
       const chatsResult = await chatsRes.json();
-      const messages = chatsResult[0]?.contact1?.chats?.map((m) => m) || [];
+      // console.log("chatsResult : ", chatsResult)
+      // const messages = chatsResult[0]?.contact1?.chats?.map((m) => m) || [];
+      const messages = chatsResult.map((chats1) => {
+        // console.log("chats1 : ", chats1)
+        return (
+          [chats1?.contact1?.email, chats1?.contact2?.email, chats1?.contact1?.chats]
+        )
+      }
+      )
+      // console.log("messages : ", messages)
       setChats(messages);
     } catch (err) {
       console.error("Error fetching chat data:", err);
@@ -115,18 +130,19 @@ const OneToOneChat = () => {
   }, [socket]);
 
   // 6. Send message handler
-  const sendMessage = async (contact) => {
-    if (!message.trim()) return;
+  const sendMessage = async (contact, message) => {
+    // if (!message.trim()) return;
+    setMessages((prev) => ([...prev, message]))
 
     try {
       const send = await fetch(`${API_URL}/send-message`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contact, message }),
+        body: JSON.stringify({ contact, message: message?.message }),
       });
 
       const result = await send.json();
-      console.log("Message sent:", result);
+      // console.log("Message sent:", result);
 
       // Append own message locally or emit via socket if your backend relies on socket.emit
       setChats((prev) => [...prev, message]);
@@ -140,42 +156,65 @@ const OneToOneChat = () => {
     }
   };
 
-  console.log("chats : ", chats)
+  // console.log("chats : ", chats)
+  // console.log("allContacts : ", allContacts)
+  console.log("message : ", message)
+  console.log("messages : ", messages)
+
 
   return (
     <div>
-      {allContacts?.map((contact, index) => (
-        <div key={index} className="p-4 border-b">
-          <div className="font-bold">{contact?.contact2?.name}</div>
+      <Link to="/">Home</Link>
+      <Link to="/login">Login</Link>
+      <Link to="/signup">Signup</Link>
+      <Link to="/ono-chat">One on one chat</Link>
 
-          <div className="my-2">
-            {chats?.map((c, chatIndex) => {
-              console.log("c : ", c)
-              let messageTime = new Date(c.createdAt);
-              console.log("messageTime : ", messageTime);
-              console.log(messageTime.getDate());
+      {allContacts?.map((contact, index) => {
+        console.log(`contact${index} : `, contact);
+        // console.log("contact?.contact2?.name : ", contact?.contact2?.name);
 
-              return (
-                <div key={chatIndex}>{c?.message} {messageTime?.getHours()}:{messageTime?.getMinutes()} {messageTime.getDate()}/{messageTime.getMonth()}/{messageTime.getFullYear()} </div>
-              )
-            })}
-          </div>
+        return (
+          <div key={index} className="p-4 border-b">
+            <div className="font-bold text-secondary">{contact?.contact2?.name}</div>
 
-          <input
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className="border p-1 mr-2"
-            placeholder="Type a message..."
-          />
+            <div className="my-2">
+              {chats?.map((c, chatIndex) => {
+                // console.log(`cc${chatIndex} : `, c)
 
-          <button
-            onClick={() => sendMessage(contact)}
-            className="border px-3 py-1 bg-blue-500 text-white rounded"
-          >
-            Send
-          </button>
-        </div>
-      ))}
+                if (contact?.contact1?.email === c[0] && contact?.contact2?.email === c[1] && c[2].length !== undefined && c[2].length > 0) {
+                  // console.log("c[2] : ", c[2])
+                  return c[2].map((c2, c2Index) => {
+                    // console.log("c2 : ", c2)
+                    let messageTime = new Date(c2.createdAt);
+                    // console.log("messageTime : ", messageTime);
+                    // console.log(messageTime.getDate());
+
+                    return (
+                      <div key={c2Index} className='text-secondary'>
+                        {c2?.message} {messageTime?.getHours()}:{messageTime?.getMinutes()} {messageTime.getDate()}/{messageTime.getMonth()}/{messageTime.getFullYear()}
+                      </div>
+                    )
+                  })
+                }
+              })}
+            </div>
+
+            <input
+              // value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="border p-1 mr-2"
+              placeholder="Type a message..."
+            />
+
+            <button
+              onClick={() => sendMessage(contact, {from: contact?.contact1?.email, message: message})}
+              // onChange={(e) => setMessage((prev) => ([...prev, {from: contact?.contact1?.email, message: e.target.value}]))}
+              className="border px-3 py-1 bg-blue-500 text-white rounded"
+            >
+              Send
+            </button>
+          </div>)
+      })}
     </div>
   );
 };
