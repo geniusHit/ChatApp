@@ -15,8 +15,6 @@ function Signup() {
   } = useForm();
 
   const onSubmit = async (data) => {
-    console.log(data);
-
     const addUser = await fetch(`${API_URL}/add-user`, {
       method: "POST",
       headers: {
@@ -41,7 +39,6 @@ function Signup() {
         <h2 className="text-center mb-4">Chat App Signup</h2>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          {/* Full Name */}
           <div className="mb-3">
             <label className="form-label">Full Name</label>
 

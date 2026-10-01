@@ -18,7 +18,6 @@ const Login = () => {
     const [IP, setIP] = useState()
 
     const onSubmit = async (data) => {
-        console.log(data);
 
         try {
             const login = await fetch(`${API_URL}/login`, {
@@ -29,15 +28,11 @@ const Login = () => {
                 body: JSON.stringify(data)
             })
 
-            console.log(login)
-
             if (!login.ok) {
                 throw new Error("User not available.")
             }
 
-            console.log("Login successful.")
             const result = await login.json()
-            console.log("result : ", result)
             setUser(result?.message)
 
             const saveUserJwt = await fetch(`${API_URL}/save-user-jwt`, {
@@ -55,8 +50,6 @@ const Login = () => {
         }
 
     };
-
-    console.log("user : ", user)
 
     useEffect(() => {
         getIP()
@@ -81,7 +74,6 @@ const Login = () => {
                 <h2 className="text-center mb-4">Chat App Login</h2>
 
                 <form onSubmit={handleSubmit(onSubmit)}>
-                    {/* Full Name */}
                     <div className="mb-3">
                         <label className="form-label">Full Name</label>
 

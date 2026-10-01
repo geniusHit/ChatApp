@@ -24,10 +24,8 @@ const userSchema = mongoose.Schema({
 const usersModel = mongoose.model("user", userSchema)
 exports.addUser = async (req, res) => {
     try {
-        console.log("req.body : ", req.body)
         const user = new usersModel(req.body)
         await user.save()
-        console.log("user : ", user)
 
         res.send(user)
     }
@@ -39,7 +37,6 @@ exports.addUser = async (req, res) => {
 exports.getUser = async (req, res) => {
     try {
         const { email } = req.body
-        console.log("email : ", email)
         const user = await usersModel.findOne({ email: email })
 
         if (user) {
@@ -97,9 +94,8 @@ exports.saveUserJwt = async (req, res) => {
 exports.getLoginUser = async (req, res) => {
     try {
         const { IP } = req.body;
-        console.log("IP : ", IP)
         const getLogin = await usersJwtModel.findOne({ IP: IP })
-        console.log("getLogin : ", getLogin)
+
         res.json(getLogin)
     }
     catch (err) {
@@ -122,17 +118,17 @@ const oneToOneContactsSchema = mongoose.Schema({
         email: {
             type: String
         },
-        chats: {
+        chats: [{
             message: {
-                type: [String]
+                type: String
             },
             to: {
-                type: [String]
+                type: String
             },
             createdAt: {
-                type: [Date]
+                type: Date
             }
-        }
+        }]
     },
 
     contact2: {
@@ -148,17 +144,17 @@ const oneToOneContactsSchema = mongoose.Schema({
         email: {
             type: String
         },
-        chats: {
+        chats: [{
             message: {
-                type: [String]
+                type: String
             },
             to: {
-                type: [String]
+                type: String
             },
             createdAt: {
-                type: [Date]
+                type: Date
             }
-        }
+        }]
     }
 })
 const oneToOneContactsModel = mongoose.model("oneToOneContacts", oneToOneContactsSchema)
@@ -168,6 +164,7 @@ exports.oneToOneContacts = async (req, res) => {
         await newContacts.save()
 
         res.json(newContacts)
+        res.send()
     } catch (err) {
         console.log(`Contacts not saved : ${err.message}`)
     }
@@ -175,10 +172,9 @@ exports.oneToOneContacts = async (req, res) => {
 
 exports.sendMessage = async (req, res) => {
     try {
-        console.log("req.body from sendMessage : ", req.body)
         const { contact, message } = req.body
-        const send = await oneToOneContactsModel.findOneAndUpdate({ "contact1.email": contact?.contact1?.email, "contact2.email": contact?.contact2?.email }, { $push: { "contact1.chats": { message: message, to: contact?.contact2?.email, createdAt: new Date() } } })
-        console.log("send : ", send)
+        const updateRecord = await oneToOneContactsModel.findOne({ "contact1.email": contact?.contact1?.email, "contact2.email": contact?.contact2?.email });
+        const send = await oneToOneContactsModel.findOneAndUpdate({ "contact1.email": contact?.contact1?.email, "contact2.email": contact?.contact2?.email }, { $push: { "contact1.chats": { message: message, to: contact?.contact2?.email, createdAt: new Date() } } }, { returnDocument: 'after' })
 
         res.json({ success: true, message: `Message sent` })
     } catch (err) {
@@ -189,7 +185,6 @@ exports.sendMessage = async (req, res) => {
 exports.getContacts = async (req, res) => {
     try {
         const { email } = req.body;
-        console.log("req.body : ", req.body)
         const contacts = await oneToOneContactsModel.find({ "contact1.email": email })
         res.json(contacts)
     } catch (err) {
@@ -200,17 +195,14 @@ exports.getContacts = async (req, res) => {
 exports.getChats = async (req, res) => {
     try {
         const { emails } = req.body
-        let conditions=[];
+        let conditions = [];
         emails.map((em) => {
-            conditions = [...conditions, {"contact1.email": em[0], "contact2.email": em[1]}]
+            conditions = [...conditions, { "contact1.email": em[0], "contact2.email": em[1] }]
         })
-        console.log("conditions : ", conditions)
-        console.log("emails : ", emails)
-        const chats = await oneToOneContactsModel.find({$or: conditions})
-        console.log("chats : ", chats)
+        const chats = await oneToOneContactsModel.find({ $or: conditions })
 
         res.json(chats)
     } catch (err) {
-        res.json({success: false, message: `Couldn't get chats ${err.message}`})
+        res.json({ success: false, message: `Couldn't get chats ${err.message}` })
     }
 }

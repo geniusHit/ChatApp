@@ -34,21 +34,14 @@ const Home = () => {
             })
 
             const result = await loginUser.json()
-            console.log("result : ", result)
             const decodedUser = result?.jwt ? jwtDecode(result?.jwt) : []
             setUser(decodedUser)
         }
     }
 
-    console.log("IP : ", IP)
-
     useEffect(() => {
         loginUser()
     }, [API_URL, IP])
-
-    console.log("user : ", user)
-
-    console.log("newUserEmail : ", newUserEmail)
 
     const addContact = async () => {
         try {
@@ -65,7 +58,6 @@ const Home = () => {
             }
 
             const result = await getProvidedContact.json()
-            console.log("result : ", result)
 
             const otoContact = await fetch(`${API_URL}/oto-contact`, {
                 method: "POST",

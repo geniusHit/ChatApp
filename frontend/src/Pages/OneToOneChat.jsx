@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { jwtDecode } from "jwt-decode"
-import io from "socket.io-client";
 import { Link } from 'react-router-dom';
 
 const OneToOneChat = () => {
@@ -9,25 +8,13 @@ const OneToOneChat = () => {
       ? "http://localhost:8000"
       : "https://rental-project-backend.vercel.app";
 
-  const [socket, setSocket] = useState(null)
   const [user, setUser] = useState(null)
   const [IP, setIP] = useState("")
   const [message, setMessage] = useState("")
-  const [messages, setMessages] = useState([])
   const [allContacts, setAllContacts] = useState([])
   const [chats, setChats] = useState([])
+  const messageInput = useRef()
 
-  // 1. Initialize socket connection dynamically
-  useEffect(() => {
-    const newSocket = io(API_URL);
-    setSocket(newSocket);
-
-    return () => {
-      newSocket.disconnect();
-    };
-  }, [API_URL]);
-
-  // 2. Fetch IP
   useEffect(() => {
     const getIP = async () => {
       try {
@@ -41,8 +28,8 @@ const OneToOneChat = () => {
     getIP();
   }, []);
 
-  // 3. Login user with IP
   useEffect(() => {
+
     const loginUser = async () => {
       if (!IP) return;
       try {
@@ -63,12 +50,10 @@ const OneToOneChat = () => {
     loginUser();
   }, [IP, API_URL]);
 
-  // 4. Fetch initial contacts & chats
   const fetchUserData = useCallback(async () => {
     if (!user?.email) return;
 
     try {
-      // Get contacts
       const contactsRes = await fetch(`${API_URL}/get-contacts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -77,27 +62,21 @@ const OneToOneChat = () => {
       const contactsData = await contactsRes.json();
       setAllContacts(Array.isArray(contactsData) ? contactsData : []);
 
-      // Get chats
       const contactEmails = contactsData.map((c) => {
         return [c?.contact1?.email, c?.contact2?.email]
       })
-      // console.log("contactEmails : ", contactEmails)
       const chatsRes = await fetch(`${API_URL}/get-chats`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ emails: contactEmails }),
       });
       const chatsResult = await chatsRes.json();
-      // console.log("chatsResult : ", chatsResult)
-      // const messages = chatsResult[0]?.contact1?.chats?.map((m) => m) || [];
       const messages = chatsResult.map((chats1) => {
-        // console.log("chats1 : ", chats1)
         return (
           [chats1?.contact1?.email, chats1?.contact2?.email, chats1?.contact1?.chats]
         )
       }
       )
-      // console.log("messages : ", messages)
       setChats(messages);
     } catch (err) {
       console.error("Error fetching chat data:", err);
@@ -110,30 +89,7 @@ const OneToOneChat = () => {
     }
   }, [user, fetchUserData]);
 
-  // 5. Setup WebSocket listener for incoming real-time messages
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleNewMessage = (newMsg) => {
-      // If server emits the string or message object, extract text and append
-      const msgText = typeof newMsg === "string" ? newMsg : newMsg?.message;
-      if (msgText) {
-        setChats((prevChats) => [...prevChats, msgText]);
-      }
-    };
-
-    socket.on("new_message", handleNewMessage);
-
-    return () => {
-      socket.off("new_message", handleNewMessage);
-    };
-  }, [socket]);
-
-  // 6. Send message handler
   const sendMessage = async (contact, message) => {
-    // if (!message.trim()) return;
-    setMessages((prev) => ([...prev, message]))
-
     try {
       const send = await fetch(`${API_URL}/send-message`, {
         method: "POST",
@@ -142,25 +98,15 @@ const OneToOneChat = () => {
       });
 
       const result = await send.json();
-      // console.log("Message sent:", result);
 
-      // Append own message locally or emit via socket if your backend relies on socket.emit
       setChats((prev) => [...prev, message]);
-      if (socket) {
-        socket.emit("send_message", { contact, message });
-      }
+      fetchUserData()
+      messageInput.current.value = ""
 
-      setMessage("");
     } catch (err) {
       console.error("Failed to send message:", err);
     }
   };
-
-  // console.log("chats : ", chats)
-  // console.log("allContacts : ", allContacts)
-  console.log("message : ", message)
-  console.log("messages : ", messages)
-
 
   return (
     <div>
@@ -170,8 +116,6 @@ const OneToOneChat = () => {
       <Link to="/ono-chat">One on one chat</Link>
 
       {allContacts?.map((contact, index) => {
-        console.log(`contact${index} : `, contact);
-        // console.log("contact?.contact2?.name : ", contact?.contact2?.name);
 
         return (
           <div key={index} className="p-4 border-b">
@@ -179,15 +123,9 @@ const OneToOneChat = () => {
 
             <div className="my-2">
               {chats?.map((c, chatIndex) => {
-                // console.log(`cc${chatIndex} : `, c)
-
                 if (contact?.contact1?.email === c[0] && contact?.contact2?.email === c[1] && c[2].length !== undefined && c[2].length > 0) {
-                  // console.log("c[2] : ", c[2])
                   return c[2].map((c2, c2Index) => {
-                    // console.log("c2 : ", c2)
                     let messageTime = new Date(c2.createdAt);
-                    // console.log("messageTime : ", messageTime);
-                    // console.log(messageTime.getDate());
 
                     return (
                       <div key={c2Index} className='text-secondary'>
@@ -200,15 +138,14 @@ const OneToOneChat = () => {
             </div>
 
             <input
-              // value={message}
               onChange={(e) => setMessage(e.target.value)}
               className="border p-1 mr-2"
               placeholder="Type a message..."
+              ref={messageInput}
             />
 
             <button
-              onClick={() => sendMessage(contact, {from: contact?.contact1?.email, message: message})}
-              // onChange={(e) => setMessage((prev) => ([...prev, {from: contact?.contact1?.email, message: e.target.value}]))}
+              onClick={() => sendMessage(contact, { from: contact?.contact1?.email, message: message })}
               className="border px-3 py-1 bg-blue-500 text-white rounded"
             >
               Send
