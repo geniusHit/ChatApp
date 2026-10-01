@@ -18,7 +18,7 @@ const Login = () => {
     const [IP, setIP] = useState()
 
     const onSubmit = async (data) => {
-
+        console.log("data : ", data)
         try {
             const login = await fetch(`${API_URL}/login`, {
                 method: "POST",
@@ -75,24 +75,20 @@ const Login = () => {
 
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="mb-3">
-                        <label className="form-label">Full Name</label>
+                        <label className="form-label">Email</label>
 
                         <input
-                            type="text"
+                            type="email"
                             className="form-control"
-                            placeholder="Enter your full name"
-                            {...register("name", {
-                                required: "Full name is required",
-                                minLength: {
-                                    value: 3,
-                                    message: "Minimum 3 characters required",
-                                },
+                            placeholder="Enter your Email"
+                            {...register("email", {
+                                required: "Email is required",
                             })}
                         />
 
-                        {errors.fullname && (
+                        {errors.email && (
                             <small className="text-danger">
-                                {errors.fullname.message}
+                                {errors.email.message}
                             </small>
                         )}
                     </div>

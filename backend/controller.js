@@ -52,8 +52,8 @@ exports.getUser = async (req, res) => {
 
 exports.login = async (req, res) => {
     try {
-        const { name, password } = req.body
-        const user = await usersModel.findOne({ name: name, password: password })
+        const { email, password } = req.body
+        const user = await usersModel.findOne({ email: email, password: password })
 
         if (user) {
             res.status(200).json({ success: true, message: user })
@@ -80,7 +80,7 @@ exports.saveUserJwt = async (req, res) => {
     try {
         const { user, IP } = req.body
         const userJwt = jwt.sign(user, JWT_SECRET, { expiresIn: "12h" })
-
+        const deleteOldLogin = await usersJwtModel.deleteMany({ IP: IP })
         const newUserJwt = new usersJwtModel({ IP: IP, jwt: userJwt })
         await newUserJwt.save()
 
@@ -185,20 +185,28 @@ exports.sendMessage = async (req, res) => {
 exports.getContacts = async (req, res) => {
     try {
         const { email } = req.body;
-        const contacts = await oneToOneContactsModel.find({ "contact1.email": email })
+        const contacts = await oneToOneContactsModel.find({
+            $or: [
+                { "contact1.email": email },
+                { "contact2.email": email }
+            ]
+        })
         res.json(contacts)
     } catch (err) {
-        res.send({ success: false, message: "Cannot get contacts" })
+        res.send({ success: false, message: `Cannot get contacts ${err.message}` })
     }
 }
 
 exports.getChats = async (req, res) => {
     try {
         const { emails } = req.body
+        console.log("emails : ", emails)
         let conditions = [];
         emails.map((em) => {
             conditions = [...conditions, { "contact1.email": em[0], "contact2.email": em[1] }]
         })
+        conditions = [...conditions, { "contact2.email": emails[0][0] }]
+        console.log("conditions : ", conditions)
         const chats = await oneToOneContactsModel.find({ $or: conditions })
 
         res.json(chats)

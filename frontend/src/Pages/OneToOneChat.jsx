@@ -60,6 +60,7 @@ const OneToOneChat = () => {
         body: JSON.stringify({ email: user.email }),
       });
       const contactsData = await contactsRes.json();
+      console.log("contactsData : ", contactsData)
       setAllContacts(Array.isArray(contactsData) ? contactsData : []);
 
       const contactEmails = contactsData.map((c) => {
@@ -108,6 +109,14 @@ const OneToOneChat = () => {
     }
   };
 
+  const logout = async () => {
+
+  }
+
+  console.log("chats : ", chats)
+  console.log("user : ", user)
+  console.log("allContacts : ", allContacts)
+
   return (
     <div>
       <Link to="/">Home</Link>
@@ -115,15 +124,19 @@ const OneToOneChat = () => {
       <Link to="/signup">Signup</Link>
       <Link to="/ono-chat">One on one chat</Link>
 
-      {allContacts?.map((contact, index) => {
+      <div>{user?.name}</div>
+
+      {allContacts.length > 0 ? allContacts?.map((contact, index) => {
 
         return (
           <div key={index} className="p-4 border-b">
             <div className="font-bold text-secondary">{contact?.contact2?.name}</div>
+            <div>From : {chats.length>0 && chats[index][0]}</div>
+            <div>To : {chats.length>0 && chats[index][1]}</div>
 
             <div className="my-2">
               {chats?.map((c, chatIndex) => {
-                if (contact?.contact1?.email === c[0] && contact?.contact2?.email === c[1] && c[2].length !== undefined && c[2].length > 0) {
+                if (c[2].length !== undefined && c[2].length > 0) {
                   return c[2].map((c2, c2Index) => {
                     let messageTime = new Date(c2.createdAt);
 
@@ -151,7 +164,7 @@ const OneToOneChat = () => {
               Send
             </button>
           </div>)
-      })}
+      }) : <div>No contacts in your list.</div>}
     </div>
   );
 };
