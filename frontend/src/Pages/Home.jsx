@@ -1,6 +1,10 @@
-import React, { useEffect, useState } from 'react'
-import { Link } from "react-router-dom"
+import { useEffect, useState, useCallback } from 'react'
 import { jwtDecode } from "jwt-decode"
+import { GiHamburgerMenu } from "react-icons/gi";
+import NewContact from './NewContact';
+import Login from './Login';
+import Signup from './Signup';
+import OneToOneChat from './OneToOneChat';
 
 const Home = () => {
     const API_URL =
@@ -8,11 +12,14 @@ const Home = () => {
             ? "http://localhost:8000"
             : "https://rental-project-backend.vercel.app";
 
-    const [messages, setMessages] = useState([])
     const [user, setUser] = useState()
     const [IP, setIP] = useState()
-    const [newUserEmail, setNewUserEmail] = useState()
-    const [showMessage, setShowMessage] = useState(false)
+    const [currentTab, setCurrentTab] = useState("home")
+    const [allContacts, setAllContacts] = useState([])
+    const [contactTarget, setContactTarget] = useState([])
+    const [emails, setEmails] = useState([])
+    const [from, setFrom] = useState()
+    const [to, setTo] = useState()
 
     useEffect(() => {
         getIP()
@@ -43,75 +50,88 @@ const Home = () => {
         loginUser()
     }, [API_URL, IP])
 
-    const addContact = async () => {
+    const fetchUserData = useCallback(async () => {
+        if (!user?.email) return;
+
         try {
-            const getProvidedContact = await fetch(`${API_URL}/get-user`, {
+            const contactsRes = await fetch(`${API_URL}/get-contacts`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ email: newUserEmail })
-            })
-
-            if (!getProvidedContact.ok) {
-                throw new Error("User not available.")
-            }
-
-            const result = await getProvidedContact.json()
-
-            const otoContact = await fetch(`${API_URL}/oto-contact`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ contact1: user, contact2: result })
-            })
-
-            setNewUserEmail("")
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: user.email }),
+            });
+            const contactsData = await contactsRes.json();
+            setFrom(contactsData[0]?.contact1?.email)
+            setAllContacts(Array.isArray(contactsData) ? contactsData : []);
+        } catch (err) {
+            console.error("Error fetching chat data:", err);
         }
-        catch (err) {
-            console.log(`User not available ${err.message}`)
+    }, [user, API_URL]);
+
+    useEffect(() => {
+        if (user) {
+            fetchUserData();
         }
-    }
+    }, [user, fetchUserData]);
+
+    const userName = user?.name.split(" ")[0];
+
+    useEffect(() => {
+        let emailsArray = []
+        allContacts.map((c) => {
+            let contactTarget =  c?.contact1?.email===user?.email ? "contact1": "contact2"
+            emailsArray = [...emailsArray, { email: c?.contact2?.email, name: c?.contact2?.name, contactTarget: contactTarget }]
+        })
+        let emailsSet = new Set(emailsArray)
+        let emailsArray2 = [...emailsSet]
+        const uniqueByEmail = [...new Map(emailsArray2.map(item => [item.email, item])).values()];
+        setEmails(uniqueByEmail)
+    }, [allContacts])
 
     return (
-        <div>
-            <Link to="/">Home</Link>
-            <Link to="/login">Login</Link>
-            <Link to="/signup">Signup</Link>
-            <Link to="/ono-chat">One on one chat</Link>
+        <div className='flex'>
+            <div className='sidebar'>
+                <div className='logo'>Swing</div>
 
-            <h2>Chat App</h2>
+                <div className='flex items-center justify-between header'>
+                    <h3 className='text-black'>{userName}</h3>
 
-            <div>{user?.name}</div> <br /><br />
-
-            <button onClick={() => setShowMessage(true)}>New Contact</button> <br /><br />
-
-            <div>
-                {messages.map((msg, index) => (
-                    <p key={index}>{msg}</p>
-                ))}
-            </div>
-
-            {showMessage === true
-                &&
-                <div className="modal show d-block" tabIndex="-1">
-                    <div className="modal-dialog">
-                        <div className="modal-content">
-                            <div className="modal-header">
-                                <h5 className="modal-title">Add Contact</h5>
-                                <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" onClick={() => setShowMessage(false)}></button>
-                            </div>
-                            <div className="modal-body">
-                                <p><input type='email' placeholder='Email' className='w-full outline-[#6c757d] border p-1 rounded-1 border-[#6c757d]' onChange={(e) => setNewUserEmail(e.target.value)} /></p>
-                            </div>
-                            <div className="modal-footer">
-                                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" onClick={addContact}>Go</button>
-                            </div>
-                        </div>
+                    <div className="dropdown">
+                        <button className="hamburger" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <GiHamburgerMenu />
+                        </button>
+                        <ul className="dropdown-menu">
+                            <li className="dropdown-item" onClick={() => { setCurrentTab("login") }}>Login</li>
+                            <li className="dropdown-item" onClick={() => { setCurrentTab("signup") }}>Signup</li>
+                            <li className="dropdown-item" onClick={() => { setCurrentTab("newcontact") }}><button onClick={() => { setShowMessage(true) }}>New Contact</button> </li>
+                        </ul>
                     </div>
                 </div>
-            }
+
+                <div className='contacts'>
+                    {
+                        emails.map((em, index) => {
+                            return <div key={index} className='contact' onClick={
+                                () => {
+                                    setCurrentTab("onochat")
+                                    setTo(em?.email)
+                                    setContactTarget(em?.contactTarget)
+                                }
+                            }>
+                                {em?.name}
+                            </div>
+                        })
+                    }
+                </div>
+            </div>
+
+            <div className={currentTab==="onochat"? 'chat-window': 'window'}>
+                {
+                    currentTab === "login" ? <Login /> :
+                        currentTab === "signup" ? <Signup /> :
+                            currentTab === "onochat" ? <OneToOneChat contactEmails={{ from: from, to: to, contactTarget: contactTarget }} /> :
+                                currentTab === "newcontact" && <NewContact />
+                }
+            </div>
         </div>
     )
 }

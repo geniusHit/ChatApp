@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom"
 import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
 
@@ -14,11 +13,9 @@ const Login = () => {
         formState: { errors },
     } = useForm();
 
-    const [user, setUser] = useState()
     const [IP, setIP] = useState()
 
     const onSubmit = async (data) => {
-        console.log("data : ", data)
         try {
             const login = await fetch(`${API_URL}/login`, {
                 method: "POST",
@@ -48,7 +45,6 @@ const Login = () => {
         catch (err) {
             console.log(`Unable to Login. ${err.message}`)
         }
-
     };
 
     useEffect(() => {
@@ -63,15 +59,11 @@ const Login = () => {
     return (
         <div className="container mt-5">
 
-            <Link to="/">Home</Link>
-            <Link to="/login">Login</Link>
-            <Link to="/signup">Signup</Link>
-
             <div
-                className="card shadow p-4 mx-auto"
-                style={{ maxWidth: "450px" }}
+                className="card shadow-sm p-4 mx-auto"
+                style={{ maxWidth: "350px" }}
             >
-                <h2 className="text-center mb-4">Chat App Login</h2>
+                <h2 className="mb-4">Login</h2>
 
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="mb-3">

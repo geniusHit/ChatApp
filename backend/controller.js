@@ -172,9 +172,8 @@ exports.oneToOneContacts = async (req, res) => {
 
 exports.sendMessage = async (req, res) => {
     try {
-        const { contact, message } = req.body
-        const updateRecord = await oneToOneContactsModel.findOne({ "contact1.email": contact?.contact1?.email, "contact2.email": contact?.contact2?.email });
-        const send = await oneToOneContactsModel.findOneAndUpdate({ "contact1.email": contact?.contact1?.email, "contact2.email": contact?.contact2?.email }, { $push: { "contact1.chats": { message: message, to: contact?.contact2?.email, createdAt: new Date() } } }, { returnDocument: 'after' })
+        const { from, to, message, contactTarget } = req.body
+        const send = await oneToOneContactsModel.findOneAndUpdate({ "contact1.email": from, "contact2.email": to }, { $push: { [`${contactTarget}.chats`]: { message: message, to: to, createdAt: new Date() } } }, { returnDocument: 'after' })
 
         res.json({ success: true, message: `Message sent` })
     } catch (err) {
@@ -187,10 +186,10 @@ exports.getContacts = async (req, res) => {
         const { email } = req.body;
         const contacts = await oneToOneContactsModel.find({
             $or: [
-                { "contact1.email": email },
-                { "contact2.email": email }
+                { "contact1.email": email }, { "contact2.email": email }
             ]
         })
+
         res.json(contacts)
     } catch (err) {
         res.send({ success: false, message: `Cannot get contacts ${err.message}` })
@@ -199,15 +198,8 @@ exports.getContacts = async (req, res) => {
 
 exports.getChats = async (req, res) => {
     try {
-        const { emails } = req.body
-        console.log("emails : ", emails)
-        let conditions = [];
-        emails.map((em) => {
-            conditions = [...conditions, { "contact1.email": em[0], "contact2.email": em[1] }]
-        })
-        conditions = [...conditions, { "contact2.email": emails[0][0] }]
-        console.log("conditions : ", conditions)
-        const chats = await oneToOneContactsModel.find({ $or: conditions })
+        const { from, to } = req.body
+        const chats = await oneToOneContactsModel.find({ "contact1.email": from, "contact2.email": to })
 
         res.json(chats)
     } catch (err) {

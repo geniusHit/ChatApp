@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom"
 import { useForm } from "react-hook-form";
 
 function Signup() {
@@ -29,14 +28,11 @@ function Signup() {
   return (
     <div className="container mt-5">
 
-      <Link to="/">Home</Link>
-      <Link to="/login">Login</Link>
-
       <div
-        className="card shadow p-4 mx-auto"
-        style={{ maxWidth: "450px" }}
+        className="card shadow-sm p-4 mx-auto"
+        style={{ maxWidth: "350px" }}
       >
-        <h2 className="text-center mb-4">Chat App Signup</h2>
+        <h2 className="mb-4">Signup</h2>
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-3">

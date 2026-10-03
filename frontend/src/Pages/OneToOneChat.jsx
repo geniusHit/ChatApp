@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { jwtDecode } from "jwt-decode"
-import { Link } from 'react-router-dom';
 
-const OneToOneChat = () => {
+const OneToOneChat = ({ contactEmails }) => {
   const API_URL =
     window.location.hostname === "localhost"
       ? "http://localhost:8000"
@@ -11,9 +10,9 @@ const OneToOneChat = () => {
   const [user, setUser] = useState(null)
   const [IP, setIP] = useState("")
   const [message, setMessage] = useState("")
-  const [allContacts, setAllContacts] = useState([])
-  const [chats, setChats] = useState([])
+  const [chats, setChats] = useState()
   const messageInput = useRef()
+  const [sortedChats, setSortedChats] = useState()
 
   useEffect(() => {
     const getIP = async () => {
@@ -29,7 +28,6 @@ const OneToOneChat = () => {
   }, []);
 
   useEffect(() => {
-
     const loginUser = async () => {
       if (!IP) return;
       try {
@@ -51,56 +49,50 @@ const OneToOneChat = () => {
   }, [IP, API_URL]);
 
   const fetchUserData = useCallback(async () => {
-    if (!user?.email) return;
+    if (!user?.email || !contactEmails?.to) return;
 
     try {
-      const contactsRes = await fetch(`${API_URL}/get-contacts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email }),
-      });
-      const contactsData = await contactsRes.json();
-      console.log("contactsData : ", contactsData)
-      setAllContacts(Array.isArray(contactsData) ? contactsData : []);
-
-      const contactEmails = contactsData.map((c) => {
-        return [c?.contact1?.email, c?.contact2?.email]
-      })
       const chatsRes = await fetch(`${API_URL}/get-chats`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ emails: contactEmails }),
+        body: JSON.stringify(contactEmails),
       });
       const chatsResult = await chatsRes.json();
-      const messages = chatsResult.map((chats1) => {
-        return (
-          [chats1?.contact1?.email, chats1?.contact2?.email, chats1?.contact1?.chats]
-        )
+      const messages = {
+        from: {
+          email: chatsResult[0]?.contact1?.email,
+          name: chatsResult[0]?.contact1?.name,
+          chats: chatsResult[0]?.contact1?.chats,
+        },
+        to: {
+          email: chatsResult[0]?.contact2?.email,
+          name: chatsResult[0]?.contact2?.name,
+          chats: chatsResult[0]?.contact2?.chats,
+        }
       }
-      )
+
       setChats(messages);
     } catch (err) {
       console.error("Error fetching chat data:", err);
     }
-  }, [user, API_URL]);
+
+  }, [user, API_URL, contactEmails?.from, contactEmails?.to]);
 
   useEffect(() => {
-    if (user) {
+    if (user && contactEmails?.to) {
       fetchUserData();
     }
-  }, [user, fetchUserData]);
 
-  const sendMessage = async (contact, message) => {
+  }, [user, contactEmails?.to, fetchUserData]);
+
+  const sendMessage = async (from, to, message, contactTarget) => {
     try {
       const send = await fetch(`${API_URL}/send-message`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contact, message: message?.message }),
+        body: JSON.stringify({ from: from, to: to, message: message, contactTarget: contactTarget }),
       });
 
-      const result = await send.json();
-
-      setChats((prev) => [...prev, message]);
       fetchUserData()
       messageInput.current.value = ""
 
@@ -109,62 +101,61 @@ const OneToOneChat = () => {
     }
   };
 
+  useEffect(() => {
+    if (chats) {
+      const chats2 = [
+        ...(chats?.from?.chats ?? []).map((c) => ({
+          ...c,
+          receiver: chats?.to?.email
+        })),
+        ...(chats?.to?.chats ?? []).map((c) => ({
+          ...c,
+          receiver: chats?.from?.email
+        }))
+      ];
+
+      setSortedChats(chats2)
+    }
+  }, [chats])
+
   const logout = async () => {
 
   }
 
-  console.log("chats : ", chats)
-  console.log("user : ", user)
-  console.log("allContacts : ", allContacts)
-
   return (
     <div>
-      <Link to="/">Home</Link>
-      <Link to="/login">Login</Link>
-      <Link to="/signup">Signup</Link>
-      <Link to="/ono-chat">One on one chat</Link>
+      <div className="p-4">
+        <div className="my-2">
+          <div>From: {contactEmails?.from}</div>
+          <div>To: {contactEmails?.to}</div>
+        </div>
 
-      <div>{user?.name}</div>
+        <div>
+          {
+            sortedChats && sortedChats.map((chat, index) => {
+              return <div key={index} className={`${chat?.receiver === user?.email ? 'text-left' : 'text-right'}`}>
+                {chat?.message}
+              </div>
+            })
+          }
+        </div>
 
-      {allContacts.length > 0 ? allContacts?.map((contact, index) => {
+        <input
+          onChange={(e) => setMessage(e.target.value)}
+          className="border p-1 mr-2"
+          placeholder="Type a message..."
+          ref={messageInput}
+        />
 
-        return (
-          <div key={index} className="p-4 border-b">
-            <div className="font-bold text-secondary">{contact?.contact2?.name}</div>
-            <div>From : {chats.length>0 && chats[index][0]}</div>
-            <div>To : {chats.length>0 && chats[index][1]}</div>
-
-            <div className="my-2">
-              {chats?.map((c, chatIndex) => {
-                if (c[2].length !== undefined && c[2].length > 0) {
-                  return c[2].map((c2, c2Index) => {
-                    let messageTime = new Date(c2.createdAt);
-
-                    return (
-                      <div key={c2Index} className='text-secondary'>
-                        {c2?.message} {messageTime?.getHours()}:{messageTime?.getMinutes()} {messageTime.getDate()}/{messageTime.getMonth()}/{messageTime.getFullYear()}
-                      </div>
-                    )
-                  })
-                }
-              })}
-            </div>
-
-            <input
-              onChange={(e) => setMessage(e.target.value)}
-              className="border p-1 mr-2"
-              placeholder="Type a message..."
-              ref={messageInput}
-            />
-
-            <button
-              onClick={() => sendMessage(contact, { from: contact?.contact1?.email, message: message })}
-              className="border px-3 py-1 bg-blue-500 text-white rounded"
-            >
-              Send
-            </button>
-          </div>)
-      }) : <div>No contacts in your list.</div>}
+        <button
+          onClick={
+            () => sendMessage(contactEmails?.from, contactEmails?.to, message, contactEmails?.contactTarget)
+          }
+          className="border px-3 py-1 bg-blue-500 text-white rounded"
+        >
+          Send
+        </button>
+      </div>
     </div>
   );
 };
