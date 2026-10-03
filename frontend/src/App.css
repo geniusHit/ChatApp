@@ -1,23 +1,30 @@
-a{
+:root{
+    --primary-color: #0d4663;
+    --secondary-color: #2C2C2E;
+    --text-color: white;
+    --text-dark: black;
+}
+
+a {
     text-decoration: none;
     color: black;
 }
 
-.sidebar{
+.sidebar {
     width: 20%;
-    background-color: #0d4663;
+    background-color: var(--primary-color);
     height: 100vh;
 }
 
-.hamburger{
+.hamburger {
     color: black;
 }
 
-.header{
+.header {
     padding: 10px 20px;
 }
 
-.window{
+.window {
     width: 100%;
     padding: 20px;
     display: flex;
@@ -25,34 +32,99 @@ a{
     align-items: center;
 }
 
-.logo{
+.logo {
     font-size: 12pt;
     margin: 6px 0px;
     text-transform: uppercase;
     font-weight: 600;
     padding: 10px 20px;
+    color: var(--secondary-color);
 }
 
-.contacts{
+.contacts {
     margin: 20px 0px;
 }
 
-.tbody{
+.tbody {
     display: block !important;
 }
 
-.contact{
+.contact {
     font-size: 14pt;
     width: 100%;
-    border-bottom: 1px solid #212529;
+    border-bottom: 1px solid var(--secondary-color);
+    color: var(--secondary-color);
     border-collapse: collapse;
 }
 
-.contact{
+.contact {
     padding: 20px !important;
     cursor: pointer;
 }
 
-.contact:hover{
+.contact:hover {
     filter: brightness(10%);
+}
+
+.chat-window {
+    width: 100%;
+}
+
+.received-chat {
+    background-color: var(--secondary-color);
+    margin: 6px;
+    width: fit-content;
+    color: var(--text-color);
+    padding: 6px 18px;
+    border-radius: 8px;
+}
+
+.sent-chat {
+    background-color: var(--primary-color);
+    margin: 6px;
+    width: fit-content;
+    color: var(--text-color);
+    padding: 6px 18px;
+    border-radius: 8px;
+    align-self: end;
+}
+
+.chats-box{
+    display: flex;
+    flex-direction: column;
+}
+
+.message-input{
+    display: grid;
+    grid-template-columns: 87% 13%;
+    margin-top: 10px;
+    outline: none;
+}
+
+.message-input input{
+    outline: none;
+    padding: 6px 18px;
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+}
+
+.message-input button{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    border-top-left-radius: 0px !important;
+    border-bottom-left-radius: 0px !important;
+    border: 1px solid var(--primary-color);
+    background-color: var(--primary-color);
+}
+
+.table{
+    width: fit-content;
+    margin-bottom: 20px;
+}
+
+.chat-receiver *{
+    color: var(--primary-color) !important;
 }

@@ -30,7 +30,6 @@ const Login = () => {
             }
 
             const result = await login.json()
-            setUser(result?.message)
 
             const saveUserJwt = await fetch(`${API_URL}/save-user-jwt`, {
                 method: "POST",

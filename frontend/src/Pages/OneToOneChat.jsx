@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { jwtDecode } from "jwt-decode"
+import { IoMdSend } from "react-icons/io";
 
 const OneToOneChat = ({ contactEmails }) => {
   const API_URL =
@@ -125,36 +126,49 @@ const OneToOneChat = ({ contactEmails }) => {
   return (
     <div>
       <div className="p-4">
-        <div className="my-2">
-          <div>From: {contactEmails?.from}</div>
-          <div>To: {contactEmails?.to}</div>
-        </div>
+
+        <table className="table">
+          <tbody>
+            <tr>
+              <th scope="row">From </th>
+              <td>{contactEmails?.from}</td>
+            </tr>
+            <tr className='chat-receiver'>
+              <th scope="row">To </th>
+              <td>{contactEmails?.to}</td>
+            </tr>
+          </tbody>
+        </table>
 
         <div>
           {
             sortedChats && sortedChats.map((chat, index) => {
-              return <div key={index} className={`${chat?.receiver === user?.email ? 'text-left' : 'text-right'}`}>
-                {chat?.message}
+              return <div key={index} className='chats-box'>
+                <div className={`${chat?.receiver === user?.email ? 'received-chat' : 'sent-chat'}`}>
+                  {chat?.message}
+                </div>
               </div>
             })
           }
         </div>
 
-        <input
-          onChange={(e) => setMessage(e.target.value)}
-          className="border p-1 mr-2"
-          placeholder="Type a message..."
-          ref={messageInput}
-        />
+        <div className='message-input'>
+          <input
+            onChange={(e) => setMessage(e.target.value)}
+            className="border mr-2"
+            placeholder="Type a message..."
+            ref={messageInput}
+          />
 
-        <button
-          onClick={
-            () => sendMessage(contactEmails?.from, contactEmails?.to, message, contactEmails?.contactTarget)
-          }
-          className="border px-3 py-1 bg-blue-500 text-white rounded"
-        >
-          Send
-        </button>
+          <button
+            onClick={
+              () => sendMessage(contactEmails?.from, contactEmails?.to, message, contactEmails?.contactTarget)
+            }
+            className="text-white rounded"
+          >
+            <IoMdSend />
+          </button>
+        </div>
       </div>
     </div>
   );

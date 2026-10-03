@@ -102,7 +102,7 @@ const Home = () => {
                         <ul className="dropdown-menu">
                             <li className="dropdown-item" onClick={() => { setCurrentTab("login") }}>Login</li>
                             <li className="dropdown-item" onClick={() => { setCurrentTab("signup") }}>Signup</li>
-                            <li className="dropdown-item" onClick={() => { setCurrentTab("newcontact") }}><button onClick={() => { setShowMessage(true) }}>New Contact</button> </li>
+                            <li className="dropdown-item" onClick={() => { setCurrentTab("newcontact") }}>New Contact</li>
                         </ul>
                     </div>
                 </div>
