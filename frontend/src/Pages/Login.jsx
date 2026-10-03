@@ -39,7 +39,7 @@ const Login = () => {
                 body: JSON.stringify({user: result?.message, IP: IP})
             })
 
-            
+            window.location.reload();
         }
         catch (err) {
             console.log(`Unable to Login. ${err.message}`)
@@ -107,7 +107,7 @@ const Login = () => {
                         )}
                     </div>
 
-                    <button type="submit" className="btn btn-primary w-100">
+                    <button type="submit" className="btn !bg-[#0d4663] text-white w-100">
                         Login
                     </button>
                 </form>

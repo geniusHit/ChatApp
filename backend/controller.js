@@ -206,3 +206,14 @@ exports.getChats = async (req, res) => {
         res.json({ success: false, message: `Couldn't get chats ${err.message}` })
     }
 }
+
+exports.logout = async (req, res) => {
+    try {
+        const { IP } = req.body;
+        const logout = await usersJwtModel.deleteMany({ IP: IP })
+
+        res.send({success: true, message: `Logout success`})
+    } catch (err) {
+        res.status(400).send({success: true, message: `Unable to logout. ${err.message}`})
+    }
+}

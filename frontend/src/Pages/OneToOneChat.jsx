@@ -119,10 +119,6 @@ const OneToOneChat = ({ contactEmails }) => {
     }
   }, [chats])
 
-  const logout = async () => {
-
-  }
-
   return (
     <div>
       <div className="p-4">

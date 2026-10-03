@@ -26,7 +26,7 @@ function Signup() {
   };
 
   return (
-    <div className="container mt-5">
+    <div className="container mt-[150px]">
 
       <div
         className="card shadow-sm p-4 mx-auto"
@@ -145,7 +145,7 @@ function Signup() {
             )}
           </div>
 
-          <button type="submit" className="btn btn-primary w-100">
+          <button type="submit" className="btn !bg-[#0d4663] text-white w-100">
             Create Account
           </button>
         </form>

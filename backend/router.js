@@ -20,4 +20,6 @@ router.post("/send-message", controller.sendMessage)
 
 router.post("/get-chats", controller.getChats)
 
+router.post("/logout", controller.logout)
+
 module.exports = router

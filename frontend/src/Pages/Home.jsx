@@ -5,6 +5,9 @@ import NewContact from './NewContact';
 import Login from './Login';
 import Signup from './Signup';
 import OneToOneChat from './OneToOneChat';
+import { SiGnuprivacyguard } from "react-icons/si";
+import { RiLoginCircleFill } from "react-icons/ri";
+import { MdAccountCircle } from "react-icons/md";
 
 const Home = () => {
     const API_URL =
@@ -73,12 +76,12 @@ const Home = () => {
         }
     }, [user, fetchUserData]);
 
-    const userName = user?.name.split(" ")[0];
+    const userName = user?.name?.split(" ")[0] || "";
 
     useEffect(() => {
         let emailsArray = []
         allContacts.map((c) => {
-            let contactTarget =  c?.contact1?.email===user?.email ? "contact1": "contact2"
+            let contactTarget = c?.contact1?.email === user?.email ? "contact1" : "contact2"
             emailsArray = [...emailsArray, { email: c?.contact2?.email, name: c?.contact2?.name, contactTarget: contactTarget }]
         })
         let emailsSet = new Set(emailsArray)
@@ -87,10 +90,20 @@ const Home = () => {
         setEmails(uniqueByEmail)
     }, [allContacts])
 
+    const logout = async () => {
+        const logoutQuery = await fetch(`${API_URL}/logout`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ IP: IP })
+        })
+
+        window.location.reload();
+    }
+
     return (
-        <div className='flex'>
+        <div className='home'>
             <div className='sidebar'>
-                <div className='logo'>Swing</div>
+                <div className='logo' onClick={() => setCurrentTab("home")}>Swing</div>
 
                 <div className='flex items-center justify-between header'>
                     <h3 className='text-black'>{userName}</h3>
@@ -103,6 +116,7 @@ const Home = () => {
                             <li className="dropdown-item" onClick={() => { setCurrentTab("login") }}>Login</li>
                             <li className="dropdown-item" onClick={() => { setCurrentTab("signup") }}>Signup</li>
                             <li className="dropdown-item" onClick={() => { setCurrentTab("newcontact") }}>New Contact</li>
+                            <li className="dropdown-item" onClick={logout}>Logout</li>
                         </ul>
                     </div>
                 </div>
@@ -124,12 +138,25 @@ const Home = () => {
                 </div>
             </div>
 
-            <div className={currentTab==="onochat"? 'chat-window': 'window'}>
+            <div className={currentTab === "onochat" ? 'chat-window main' : 'window main'}>
                 {
                     currentTab === "login" ? <Login /> :
                         currentTab === "signup" ? <Signup /> :
                             currentTab === "onochat" ? <OneToOneChat contactEmails={{ from: from, to: to, contactTarget: contactTarget }} /> :
-                                currentTab === "newcontact" && <NewContact />
+                                currentTab === "newcontact" ? <NewContact /> : <div className='home-icons'>
+                                    <div className='icon' onClick={() => setCurrentTab("login")}>
+                                        <RiLoginCircleFill />
+                                        <span className='link-text'>Login</span>
+                                    </div>
+                                    <div className='icon' onClick={() => setCurrentTab("signup")}>
+                                        <SiGnuprivacyguard />
+                                        <span className='link-text'>Signup</span>
+                                    </div>
+                                    <div className='icon' onClick={() => setCurrentTab("newcontact")}>
+                                        <MdAccountCircle />
+                                        <span className='link-text'>Account</span>
+                                    </div>
+                                </div>
                 }
             </div>
         </div>

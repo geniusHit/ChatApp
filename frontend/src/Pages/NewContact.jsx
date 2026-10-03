@@ -40,11 +40,15 @@ const NewContact = () => {
     }
 
     return (
-        <div>
-            <h5 className="modal-title">Add Contact</h5>
-            <p><input type='email' placeholder='Email' className='w-full outline-[#6c757d] border p-1 rounded-1 border-[#6c757d]' onChange={(e) => setNewUserEmail(e.target.value)} /></p>
-            <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" onClick={addContact}>Go</button>
-
+        <div className="container mt-5">
+            <div className='card shadow-sm p-4 mx-auto'
+                style={{ maxWidth: "350px" }}
+            >
+                <h2 className="mb-4">Add Contact</h2>
+                <label className="form-label">Email</label>
+                <p><input type='email' placeholder='Enter your Email' className='w-full outline-[#6c757d] border p-1 rounded-1 border-[#6c757d]' onChange={(e) => setNewUserEmail(e.target.value)} /></p>
+                <button type="button" className="btn !bg-[#0d4663] text-white w-100" data-bs-dismiss="modal" onClick={addContact}>Go</button>
+            </div>
         </div>
     )
 }
