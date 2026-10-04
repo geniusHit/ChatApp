@@ -14,6 +14,8 @@ const OneToOneChat = ({ contactEmails }) => {
   const [chats, setChats] = useState()
   const messageInput = useRef()
   const [sortedChats, setSortedChats] = useState()
+  const [chatsDate, setChatsDate] = useState()
+  const [sortedChatsWithDate, setSortedChatsWithDate] = useState([])
 
   useEffect(() => {
     const getIP = async () => {
@@ -115,9 +117,46 @@ const OneToOneChat = ({ contactEmails }) => {
         }))
       ];
 
-      setSortedChats(chats2)
+      const chats3 = chats2.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+
+      const uniqueDates = chats3.map((chat, index) => {
+        const date = new Date(chat.createdAt)
+        const dateOfMonth = date.getDate()
+        const month = date.getMonth()
+        const year = date.getFullYear()
+
+        return `${dateOfMonth}/${month}/${year}`
+      })
+
+      const uniqueDatesSet = new Set(uniqueDates)
+
+      setChatsDate(uniqueDatesSet)
+
+      setSortedChats(chats3)
     }
   }, [chats])
+
+  useEffect(() => {
+    if (chatsDate && sortedChats) {
+      for (const date of chatsDate) {
+        const splitDate = date.split("/")
+        const sameDateChats = sortedChats.filter((chat) => {
+          const date = new Date(chat.createdAt)
+          const dateOfMonth = date.getDate()
+          const month = date.getMonth()
+          const year = date.getFullYear()
+
+          if (dateOfMonth == splitDate[0] && month == splitDate[1] && year == splitDate[2]) {
+            return chat
+          }
+        })
+
+        setSortedChatsWithDate((prev) => [...prev, { date: date, chats: sameDateChats }])
+      }
+    }
+  }, [chatsDate, sortedChats])
+
+  console.log("sortedChatsWithDate : ", sortedChatsWithDate)
 
   return (
     <div>
@@ -131,18 +170,33 @@ const OneToOneChat = ({ contactEmails }) => {
             </tr>
             <tr className='chat-receiver'>
               <th scope="row">To </th>
-              <td>{contactEmails?.to}</td>
+              <td>{contactEmails?.to} (You)</td>
             </tr>
           </tbody>
         </table>
 
         <div>
           {
-            sortedChats && sortedChats.map((chat, index) => {
+            sortedChatsWithDate && sortedChatsWithDate.map((chat, index) => {
+              const d = chat.date
+              const splitDate = d.split("/")
+
               return <div key={index} className='chats-box'>
-                <div className={`${chat?.receiver === user?.email ? 'received-chat' : 'sent-chat'}`}>
-                  {chat?.message}
-                </div>
+                <div className='chats-date'>{splitDate[0]}/{Number(splitDate[1]) + 1}/{splitDate[2]}</div>
+                {
+                  chat.chats.map((chat2, index) => {
+                    const date = new Date(chat2.createdAt)
+                    const hour = date.getHours()
+                    const minutes = date.getMinutes()
+
+                    return <div key={index} className={`${chat2?.receiver === user?.email ? 'received chat' : 'sent chat'}`}>
+                      <div className={`${chat2?.receiver === user?.email ? 'received-chat' : 'sent-chat'}`}>
+                        {chat2?.message}
+                      </div>
+                      <span className='chat-time'>{hour}: {minutes}</span>
+                    </div>
+                  })
+                }
               </div>
             })
           }
@@ -166,7 +220,7 @@ const OneToOneChat = ({ contactEmails }) => {
           </button>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

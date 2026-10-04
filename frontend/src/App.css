@@ -123,8 +123,30 @@ a {
     flex: 1;
     overflow-y: auto;
     overflow-x: auto;
-    padding: 10px;
     min-height: 0;
+}
+
+.chat{
+    margin: 6px;
+    width: fit-content;
+    max-width: 75%;
+    color: var(--text-color);
+    border-radius: 8px;
+    overflow-wrap: anywhere;
+    display: flex;
+    align-items: end;
+}
+
+.chat-time{
+    font-size: 12px;
+    color: gray;
+}
+
+.chats-date{
+    font-size: 15px;
+    color: gray;
+    text-align: center;
+    margin: 10px 0px;
 }
 
 .received-chat {
@@ -133,9 +155,14 @@ a {
     width: fit-content;
     max-width: 75%;
     color: var(--text-color);
-    padding: 6px 18px;
     border-radius: 8px;
+    align-self: flex-end;
     overflow-wrap: anywhere;
+    padding: 6px 14px;
+}
+
+.received{
+    align-self: flex-start;
 }
 
 .sent-chat {
@@ -144,10 +171,14 @@ a {
     width: fit-content;
     max-width: 75%;
     color: var(--text-color);
-    padding: 6px 18px;
     border-radius: 8px;
     align-self: flex-end;
     overflow-wrap: anywhere;
+    padding: 6px 14px;
+}
+
+.sent{
+    align-self: flex-end;
 }
 
 .message-input {
