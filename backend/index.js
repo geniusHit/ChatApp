@@ -5,7 +5,17 @@ const express = require("express")
 const cors = require("cors")
 const app = express()
 
-app.use(cors())
+// app.use(cors())
+app.use(
+    cors({
+        origin: "*",
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+    })
+);
+
+// app.options("*", cors());
+
 app.use(express.json())
 
 app.get("/", (req, res) => {
@@ -18,9 +28,9 @@ app.get("/", (req, res) => {
 const router = require("./router.js")
 app.use(router)
 
-module.exports = app;
+// module.exports = app;
 
-// const port = process.env.PORT || 8000
-// app.listen(port, () => {
-//     console.log(`App is listening at port ${port}.`)
-// })
+const port = process.env.PORT || 8000
+app.listen(port, () => {
+    console.log(`App is listening at port ${port}.`)
+})
