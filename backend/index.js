@@ -8,6 +8,13 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
+app.get("/", (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "Chat app backend is working"
+    });
+});
+
 const router = require("./router.js")
 app.use(router)
 

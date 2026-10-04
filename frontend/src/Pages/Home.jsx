@@ -100,6 +100,8 @@ const Home = () => {
         window.location.reload();
     }
 
+    console.log("user : ", user)
+
     return (
         <div className='home'>
             <div className='sidebar'>
