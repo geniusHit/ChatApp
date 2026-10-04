@@ -4,7 +4,7 @@ function Signup() {
   const API_URL =
     window.location.hostname === "localhost"
       ? "http://localhost:8000"
-      : "https://rental-project-backend.vercel.app";
+      : "https://chat-app-backend-three-ashen.vercel.app";
 
   const {
     register,
