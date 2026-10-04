@@ -28,9 +28,9 @@ app.get("/", (req, res) => {
 const router = require("./router.js")
 app.use(router)
 
-// module.exports = app;
+module.exports = app;
 
-const port = process.env.PORT || 8000
-app.listen(port, () => {
-    console.log(`App is listening at port ${port}.`)
-})
+// const port = process.env.PORT || 8000
+// app.listen(port, () => {
+//     console.log(`App is listening at port ${port}.`)
+// })

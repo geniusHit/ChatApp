@@ -101,6 +101,7 @@ const Home = () => {
     }
 
     console.log("user : ", user)
+    console.log("API_URL : ", API_URL)
 
     return (
         <div className='home'>
