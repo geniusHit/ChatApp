@@ -1,7 +1,6 @@
 require("dotenv").config()
 const mongoose = require("mongoose")
 const jwt = require("jsonwebtoken")
-const { MongoCryptInvalidArgumentError } = require("mongodb")
 const JWT_SECRET = process.env.JWT_SECRET
 
 const userSchema = mongoose.Schema({
