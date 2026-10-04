@@ -5,16 +5,15 @@ const express = require("express")
 const cors = require("cors")
 const app = express()
 
-// app.use(cors())
-const corsOptions = {
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: false
-}
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
-
+app.use(cors())
+// const corsOptions = {
+//     origin: "*",
+//     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+//     allowedHeaders: ["Content-Type", "Authorization"],
+//     credentials: false
+// }
+// app.use(cors(corsOptions));
+// app.options("*", cors(corsOptions));
 app.use(express.json())
 
 app.get("/", (req, res) => {
@@ -25,7 +24,7 @@ app.get("/", (req, res) => {
 });
 
 const router = require("./router.js")
-app.use(router)
+app.use("/", router)
 
 module.exports = app;
 
