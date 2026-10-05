@@ -100,7 +100,8 @@ const OneToOneChat = ({ contactEmails }) => {
         body: JSON.stringify({ from: from, to: to, message: message, contactTarget: contactTarget }),
       });
 
-      const messages = fetchUserData()
+      const messages = await fetchUserData()
+      console.log("messages from sendMessage : ", messages)
       messageInput.current.value = ""
       socket.emit("send_message", messages);
     } catch (err) {
@@ -178,7 +179,7 @@ const OneToOneChat = ({ contactEmails }) => {
     return () => {
       socket.off("receive_message");
     };
-  }, [chats]);
+  }, []);
 
   return (
     <div>
