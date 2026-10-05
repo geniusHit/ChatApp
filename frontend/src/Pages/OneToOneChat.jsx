@@ -103,6 +103,7 @@ const OneToOneChat = ({ contactEmails }) => {
       const messages = await fetchUserData()
       console.log("messages from sendMessage : ", messages)
       messageInput.current.value = ""
+      setChats(messages)
       socket.emit("send_message", messages);
     } catch (err) {
       console.error("Failed to send message:", err);
