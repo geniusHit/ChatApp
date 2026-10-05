@@ -2,13 +2,14 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { jwtDecode } from "jwt-decode"
 import { IoMdSend } from "react-icons/io";
 import { io } from "socket.io-client";
-const socket = io("http://localhost:8000");
 
 const OneToOneChat = ({ contactEmails }) => {
   const API_URL =
     window.location.hostname === "localhost"
       ? "http://localhost:8000"
       : "https://chat-app-backend-three-ashen.vercel.app";
+
+  const socket = io(`${API_URL}`);
 
   const [user, setUser] = useState(null)
   const [IP, setIP] = useState("")
@@ -99,6 +100,9 @@ const OneToOneChat = ({ contactEmails }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ from: from, to: to, message: message, contactTarget: contactTarget }),
       });
+
+      const sendData = await send.json()
+      console.log("sendData : ", sendData)
 
       const messages = await fetchUserData()
       console.log("messages from sendMessage : ", messages)
