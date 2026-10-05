@@ -102,7 +102,6 @@ exports.getLoginUser = async (req, res) => {
     }
 }
 
-
 const oneToOneContactsSchema = mongoose.Schema({
     contact1: {
         name: {

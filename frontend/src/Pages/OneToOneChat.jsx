@@ -105,12 +105,9 @@ const OneToOneChat = ({ contactEmails }) => {
       });
 
       const sendData = await send.json()
-      console.log("sendData : ", sendData)
 
       const messages = await fetchUserData()
-      console.log("messages from sendMessage : ", messages)
       messageInput.current.value = ""
-      // setChats(messages)
       setSortedChatsWithDate([])
       socket.emit("send_message", messages);
     } catch (err) {
@@ -152,24 +149,15 @@ const OneToOneChat = ({ contactEmails }) => {
 
   useEffect(() => {
     if (chatsDate && sortedChats) {
-      console.log("chatsDate : ", chatsDate)
-      console.log("sortedChats : ", sortedChats)
       const newChats = []
 
       for (const date of chatsDate) {
-        console.log("date : ", date)
         const splitDate = date.split("/")
-        console.log("splitDate : ", splitDate)
         const sameDateChats = sortedChats.filter((chat) => {
-          console.log("chat : ", chat)
           const date = new Date(chat.createdAt)
-          console.log("date : ", date)
           const dateOfMonth = date.getDate()
-          console.log("dateOfMonth : ", dateOfMonth)
           const month = date.getMonth()
-          console.log("month : ", month)
           const year = date.getFullYear()
-          console.log("year : ", year)
 
           if (dateOfMonth == splitDate[0] && month == splitDate[1] && year == splitDate[2]) {
             return chat
@@ -184,8 +172,6 @@ const OneToOneChat = ({ contactEmails }) => {
     }
   }, [chatsDate, sortedChats])
 
-  console.log("sortedChatsWithDate : ", sortedChatsWithDate)
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
   };
@@ -195,7 +181,6 @@ const OneToOneChat = ({ contactEmails }) => {
 
   useEffect(() => {
     socket.on("receive_message", (data) => {
-      console.log("New chats from receive_message : ", data);
       setChats(data)
     });
 
@@ -203,8 +188,6 @@ const OneToOneChat = ({ contactEmails }) => {
       socket.off("receive_message");
     };
   }, []);
-
-  console.log("chats : ", chats)
 
   return (
     <div>
