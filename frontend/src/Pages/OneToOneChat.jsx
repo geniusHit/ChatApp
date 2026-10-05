@@ -196,9 +196,9 @@ const OneToOneChat = ({ contactEmails }) => {
       setChats(data)
     });
 
-    return () => {
-      socket.off("receive_message");
-    };
+    // return () => {
+    //   socket.off("receive_message");
+    // };
   }, []);
 
   console.log("chats : ", chats)
