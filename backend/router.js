@@ -22,4 +22,6 @@ router.post("/get-chats", controller.getChats)
 
 router.post("/logout", controller.logout)
 
+router.post("/delete-chat", controller.deleteChat)
+
 module.exports = router

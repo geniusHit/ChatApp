@@ -210,8 +210,45 @@ exports.logout = async (req, res) => {
         const { IP } = req.body;
         const logout = await usersJwtModel.deleteMany({ IP: IP })
 
-        res.send({success: true, message: `Logout success`})
+        res.send({ success: true, message: `Logout success` })
     } catch (err) {
-        res.status(400).send({success: true, message: `Unable to logout. ${err.message}`})
+        res.status(400).send({ success: true, message: `Unable to logout. ${err.message}` })
+    }
+}
+
+exports.deleteChat = async (req, res) => {
+    try {
+        const { _id } = req.body
+        console.log("_id : ", _id)
+        const object1 = await oneToOneContactsModel.findOne({
+            $or: [
+                { "contact1.chats._id": _id },
+                { "contact2.chats._id": _id },
+            ]
+        },)
+        console.log("object1 : ", object1)
+        const chatToDelete1 = object1.contact1.chats.filter((chat) => chat._id.equals(_id))
+        console.log("chatToDelete1 : ", chatToDelete1)
+        const chatToDelete2 = object1.contact2.chats.filter((chat) => chat._id.equals(_id))
+        console.log("chatToDelete2 : ", chatToDelete2)
+
+        const deleteChatQuery = await oneToOneContactsModel.updateOne(
+            {
+                $or: [
+                    { "contact1.chats._id": new mongoose.Types.ObjectId(`${_id}`) },
+                    { "contact2.chats._id": new mongoose.Types.ObjectId(`${_id}`) }
+                ]
+            },
+            {
+                $pull: {
+                    "contact1.chats": { _id: _id },
+                    "contact2.chats": { _id: _id }
+                }
+            }
+        )
+
+        res.end()
+    } catch (err) {
+        console.log(`Couldn't delete chat : ${err}`)
     }
 }

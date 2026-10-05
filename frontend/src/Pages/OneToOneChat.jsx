@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { jwtDecode } from "jwt-decode"
 import { IoMdSend } from "react-icons/io";
 import { io } from "socket.io-client";
+import { FaDeleteLeft } from "react-icons/fa6";
 
 const API_URL =
   window.location.hostname === "localhost"
@@ -23,6 +24,8 @@ const OneToOneChat = ({ contactEmails }) => {
   const [chatsDate, setChatsDate] = useState()
   const [sortedChatsWithDate, setSortedChatsWithDate] = useState([])
   const messagesEndRef = useRef()
+  const chatsContainerRef = useRef(null);
+  const previousScrollHeight = useRef(0);
 
   useEffect(() => {
     const getIP = async () => {
@@ -189,6 +192,27 @@ const OneToOneChat = ({ contactEmails }) => {
     };
   }, []);
 
+  const deleteChat = async (chatToDelete) => {
+    const container = chatsContainerRef.current;
+    const oldScrollTop = container?.scrollTop;
+
+    const deleteQuery = await fetch(`${API_URL}/delete-chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ _id: chatToDelete._id })
+    })
+
+    const messages = await fetchUserData()
+    setSortedChatsWithDate([])
+    socket.emit("send_message", messages);
+
+    requestAnimationFrame(() => {
+      if (container) {
+        container.scrollTop = oldScrollTop;
+      }
+    });
+  }
+
   return (
     <div>
       <div className="p-4">
@@ -212,7 +236,7 @@ const OneToOneChat = ({ contactEmails }) => {
               const d = chat.date
               const splitDate = d.split("/")
 
-              return <div key={index} className='chats-box'>
+              return <div key={index} className='chats-box' ref={chatsContainerRef}>
                 <div className='chats-date'>{splitDate[0]}/{Number(splitDate[1]) + 1}/{splitDate[2]}</div>
                 {
                   chat.chats.map((chat2, index) => {
@@ -225,6 +249,9 @@ const OneToOneChat = ({ contactEmails }) => {
                         {chat2?.message}
                       </div>
                       <span className='chat-time'>{hour}: {minutes}</span>
+                      <div className='delete' onClick={() => {
+                        deleteChat(chat2)
+                      }}><FaDeleteLeft /></div>
                     </div>
                   })
                 }
