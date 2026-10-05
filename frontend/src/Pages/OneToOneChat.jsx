@@ -3,14 +3,17 @@ import { jwtDecode } from "jwt-decode"
 import { IoMdSend } from "react-icons/io";
 import { io } from "socket.io-client";
 
+const API_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:8000"
+    : "https://chat-app-backend-three-ashen.vercel.app";
+
+const socket = io(API_URL, {
+  transports: ["websocket"],
+  reconnection: true,
+});
+
 const OneToOneChat = ({ contactEmails }) => {
-  const API_URL =
-    window.location.hostname === "localhost"
-      ? "http://localhost:8000"
-      : "https://chat-app-backend-three-ashen.vercel.app";
-
-  const socket = io(`${API_URL}`);
-
   const [user, setUser] = useState(null)
   const [IP, setIP] = useState("")
   const [message, setMessage] = useState("")
@@ -196,9 +199,9 @@ const OneToOneChat = ({ contactEmails }) => {
       setChats(data)
     });
 
-    // return () => {
-    //   socket.off("receive_message");
-    // };
+    return () => {
+      socket.off("receive_message");
+    };
   }, []);
 
   console.log("chats : ", chats)
