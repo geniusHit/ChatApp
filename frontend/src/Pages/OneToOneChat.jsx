@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { jwtDecode } from "jwt-decode"
 import { IoMdSend } from "react-icons/io";
+import { io } from "socket.io-client";
+const socket = io("http://localhost:8000");
 
 const OneToOneChat = ({ contactEmails }) => {
   const API_URL =
@@ -16,6 +18,7 @@ const OneToOneChat = ({ contactEmails }) => {
   const [sortedChats, setSortedChats] = useState()
   const [chatsDate, setChatsDate] = useState()
   const [sortedChatsWithDate, setSortedChatsWithDate] = useState([])
+  const messagesEndRef = useRef()
 
   useEffect(() => {
     const getIP = async () => {
@@ -75,6 +78,7 @@ const OneToOneChat = ({ contactEmails }) => {
       }
 
       setChats(messages);
+      return messages
     } catch (err) {
       console.error("Error fetching chat data:", err);
     }
@@ -96,9 +100,9 @@ const OneToOneChat = ({ contactEmails }) => {
         body: JSON.stringify({ from: from, to: to, message: message, contactTarget: contactTarget }),
       });
 
-      fetchUserData()
+      const messages = fetchUserData()
       messageInput.current.value = ""
-
+      socket.emit("send_message", messages);
     } catch (err) {
       console.error("Failed to send message:", err);
     }
@@ -157,6 +161,24 @@ const OneToOneChat = ({ contactEmails }) => {
   }, [chatsDate, sortedChats])
 
   console.log("sortedChatsWithDate : ", sortedChatsWithDate)
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
+  };
+  useEffect(() => {
+    scrollToBottom();
+  }, [sortedChatsWithDate]);
+
+  useEffect(() => {
+    socket.on("receive_message", (data) => {
+      console.log("New chats from receive_message : ", data);
+      setChats(data)
+    });
+
+    return () => {
+      socket.off("receive_message");
+    };
+  }, [chats]);
 
   return (
     <div>
@@ -220,6 +242,8 @@ const OneToOneChat = ({ contactEmails }) => {
           </button>
         </div>
       </div>
+
+      <div ref={messagesEndRef} />
     </div >
   );
 };

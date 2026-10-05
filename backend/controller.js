@@ -174,7 +174,7 @@ exports.sendMessage = async (req, res) => {
         const { from, to, message, contactTarget } = req.body
         const send = await oneToOneContactsModel.findOneAndUpdate({ "contact1.email": from, "contact2.email": to }, { $push: { [`${contactTarget}.chats`]: { message: message, to: to, createdAt: new Date() } } }, { returnDocument: 'after' })
 
-        res.json({ success: true, message: `Message sent` })
+        res.json({ success: true, message: `Message sent`, data: send })
     } catch (err) {
         res.json({ success: false, message: `Unable to send message. ${err.message}` })
     }

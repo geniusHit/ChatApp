@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react'
 import { jwtDecode } from "jwt-decode"
 import { GiHamburgerMenu } from "react-icons/gi";
 import NewContact from './NewContact';
@@ -23,6 +23,7 @@ const Home = () => {
     const [emails, setEmails] = useState([])
     const [from, setFrom] = useState()
     const [to, setTo] = useState()
+    const main = useRef()
 
     useEffect(() => {
         getIP()
@@ -100,6 +101,9 @@ const Home = () => {
         window.location.reload();
     }
 
+    console.log("user : ", user)
+    console.log("IP : ", IP)
+
     return (
         <div className='home'>
             <div className='sidebar'>
@@ -138,7 +142,7 @@ const Home = () => {
                 </div>
             </div>
 
-            <div className={currentTab === "onochat" ? 'chat-window main' : 'window main'}>
+            <div className={currentTab === "onochat" ? 'chat-window main' : 'window main'} ref={main}>
                 {
                     currentTab === "login" ? <Login /> :
                         currentTab === "signup" ? <Signup /> :
