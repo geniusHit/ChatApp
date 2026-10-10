@@ -248,7 +248,7 @@ const OneToOneChat = ({ contactEmails }) => {
     return () => {
       socket.off("receive_message", handleReceiveMessage);
     };
-  }, []);
+  }, [fetchUserData]);
 
   const deleteChat = async (chatToDelete) => {
     const container = document.querySelector(".chat-window");
