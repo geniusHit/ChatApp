@@ -170,8 +170,9 @@ exports.oneToOneContacts = async (req, res) => {
 
 exports.sendMessage = async (req, res) => {
     try {
+        console.log("req.body : ", req.body)
         const { from, to, message, contactTarget } = req.body
-        const send = await oneToOneContactsModel.findOneAndUpdate({ "contact1.email": from, "contact2.email": to }, { $push: { [`${contactTarget}.chats`]: { message: message, to: to, createdAt: new Date() } } }, { returnDocument: 'after' })
+        const send = await oneToOneContactsModel.findOneAndUpdate({ "contact1.email": from, "contact2.email": to }, { $push: { "contact1.chats": { message: message, to: "", createdAt: new Date() }, "contact2.chats": { message: message, to: to, createdAt: new Date() } } }, { returnDocument: 'after' })
 
         res.json({ success: true, message: `Message sent`, data: send })
     } catch (err) {
@@ -196,10 +197,77 @@ exports.getContacts = async (req, res) => {
 
 exports.getChats = async (req, res) => {
     try {
+        console.log("req.body from getChats : ", req.body)
         const { from, to } = req.body
         const chats = await oneToOneContactsModel.find({ "contact1.email": from, "contact2.email": to })
+        // const fromChats = await oneToOneContactsModel.aggregate([
+        //     {
+        //         $match: {
+        //             "contact1.email": from,
+        //             "contact2.email": to,
+        //             "contact1.chats.to": { $ne: "" }
+        //         }
+        //     },
+        //     {
+        //         $project: {
+        //             "contact1.email": 1,
+        //             "contact1.chats": {
+        //                 $filter: {
+        //                     input: "$contact1.chats",
+        //                     as: "chat",
+        //                     cond: { $ne: ["$$chat.to", ""] }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // ]);
+        const fromChats = await oneToOneContactsModel.aggregate([
+            {
+                $match: {
+                    "contact1.email": from
+                }
+            },
+            {
+                $project: {
+                    "contact1.email": 1,
+                    "contact1.chats": {
+                        $filter: {
+                            input: "$contact1.chats",
+                            as: "chat",
+                            cond: {
+                                $and: [
+                                    { $ne: ["$$chat.to", ""] },
+                                    { $eq: [{ $type: "$$chat.to" }, "string"] }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        ]);
+        const toChats = await oneToOneContactsModel.aggregate([
+            {
+                $match: {
+                    "contact1.email": from,
+                    "contact2.email": to,
+                    "contact2.chats.to": to
+                }
+            },
+            {
+                $project: {
+                    "contact2.email": 1,
+                    "contact2.chats": {
+                        $filter: {
+                            input: "$contact2.chats",
+                            as: "chat",
+                            cond: { $eq: ["$$chat.to", to] }
+                        }
+                    }
+                }
+            }
+        ]);
 
-        res.json(chats)
+        res.json({ chats, fromChats, toChats })
     } catch (err) {
         res.json({ success: false, message: `Couldn't get chats ${err.message}` })
     }

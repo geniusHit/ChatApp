@@ -25,7 +25,9 @@ const App = () => {
   const [emails, setEmails] = useState([])
   const [from, setFrom] = useState()
   const [to, setTo] = useState()
-  const main = useRef()
+  const chatWindowRef = useRef(null);
+  const previousScrollTop = useRef(0);
+  const main = useRef(null)
 
   useEffect(() => {
     getIP()
@@ -103,13 +105,20 @@ const App = () => {
     window.location.reload();
   }
 
+  useEffect(()=> {
+    let el =  main?.current
+    let el2 = el.getBoundingClientRect()
+    console.log("main.current.scrollTop : ", main?.current)
+    console.log(el2)
+  }, [])
+
   return (
     <div className='home'>
       <div className='sidebar'>
         <div className='logo' onClick={() => setCurrentTab("home")}>Swing</div>
 
         <div className='flex items-center justify-between header'>
-          <h3 className='text-black'>{userName}</h3>
+          <h3 className='username'>{userName}</h3>
 
           <div className="dropdown">
             <button className="hamburger" type="button" data-bs-toggle="dropdown" aria-expanded="false">

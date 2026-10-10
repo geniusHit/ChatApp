@@ -54,6 +54,11 @@ a {
     flex-shrink: 0;
 }
 
+.username{
+    color: black;
+    cursor: pointer;
+}
+
 .header {
     padding: 10px 20px;
     flex-shrink: 0;
@@ -248,6 +253,10 @@ a {
 
 .home-icons .link-text {
     font-size: 15px;
+}
+
+.dropdown-item {
+    cursor: pointer;
 }
 
 .dropdown-item:active {

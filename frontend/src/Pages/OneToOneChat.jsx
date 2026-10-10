@@ -1,5 +1,12 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
-import { jwtDecode } from "jwt-decode"
+import {
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  useLayoutEffect,
+} from "react";
+
+import { jwtDecode } from "jwt-decode";
 import { IoMdSend } from "react-icons/io";
 import { io } from "socket.io-client";
 import { FaDeleteLeft } from "react-icons/fa6";
@@ -15,253 +22,367 @@ const socket = io(API_URL, {
 });
 
 const OneToOneChat = ({ contactEmails }) => {
-  const [user, setUser] = useState(null)
-  const [IP, setIP] = useState("")
-  const [message, setMessage] = useState("")
-  const [chats, setChats] = useState()
-  const messageInput = useRef()
-  const [sortedChats, setSortedChats] = useState()
-  const [chatsDate, setChatsDate] = useState()
-  const [sortedChatsWithDate, setSortedChatsWithDate] = useState([])
-  const messagesEndRef = useRef()
-  const chatsContainerRef = useRef(null);
-  const previousScrollHeight = useRef(0);
+  const [user, setUser] = useState(null);
+  const [IP, setIP] = useState("");
+  const [message, setMessage] = useState("");
+  const [chats, setChats] = useState(null);
+  const [sortedChats, setSortedChats] = useState([]);
+  const [chatsDate, setChatsDate] = useState([]);
+  const [sortedChatsWithDate, setSortedChatsWithDate] = useState([]);
+  const [fromChats, setFromChats] = useState()
+  const [toChats, setToChats] = useState()
+
+  const messageInput = useRef(null);
+
+  const previousScrollTop = useRef(0);
+  const restoreScroll = useRef(false);
 
   useEffect(() => {
     const getIP = async () => {
       try {
-        const response = await fetch("https://api.ipify.org?format=json");
+        const response = await fetch(
+          "https://api.ipify.org?format=json"
+        );
+
         const data = await response.json();
         setIP(data.ip);
-      } catch (err) {
-        console.error("Failed to fetch IP:", err);
+      } catch (error) {
+        console.error("Failed to fetch IP:", error);
       }
     };
+
     getIP();
   }, []);
 
   useEffect(() => {
     const loginUser = async () => {
       if (!IP) return;
+
       try {
-        const res = await fetch(`${API_URL}/get-login`, {
+        const response = await fetch(`${API_URL}/get-login`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({ IP }),
         });
-        const result = await res.json();
+
+        const result = await response.json();
+
         if (result?.jwt) {
           setUser(jwtDecode(result.jwt));
         }
-      } catch (err) {
-        console.error("Login failed:", err);
+      } catch (error) {
+        console.error("Login failed:", error);
       }
     };
 
     loginUser();
-  }, [IP, API_URL]);
+  }, [IP]);
 
   const fetchUserData = useCallback(async () => {
-    if (!user?.email || !contactEmails?.to) return;
-
-    try {
-      const chatsRes = await fetch(`${API_URL}/get-chats`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(contactEmails),
-      });
-      const chatsResult = await chatsRes.json();
-      const messages = {
-        from: {
-          email: chatsResult[0]?.contact1?.email,
-          name: chatsResult[0]?.contact1?.name,
-          chats: chatsResult[0]?.contact1?.chats,
-        },
-        to: {
-          email: chatsResult[0]?.contact2?.email,
-          name: chatsResult[0]?.contact2?.name,
-          chats: chatsResult[0]?.contact2?.chats,
-        }
-      }
-
-      setChats(messages);
-      return messages
-    } catch (err) {
-      console.error("Error fetching chat data:", err);
+    if (!user?.email || !contactEmails?.to) {
+      return null;
     }
 
-  }, [user, API_URL, contactEmails?.from, contactEmails?.to]);
+    try {
+      const response = await fetch(`${API_URL}/get-chats`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(contactEmails),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch chats");
+      }
+
+      const result = await response.json();
+      console.log("result : ", result)
+
+      const messages = {
+        from: {
+          email: result?.chats?.[0]?.contact1?.email,
+          name: result?.chats?.[0]?.contact1?.name,
+          chats: result?.chats?.[0]?.contact1?.chats ?? [],
+        },
+        to: {
+          email: result?.chats?.[0]?.contact2?.email,
+          name: result?.chats?.[0]?.contact2?.name,
+          chats: result?.chats?.[0]?.contact2?.chats ?? [],
+        },
+      };
+
+      setChats(messages);
+      setFromChats(result?.fromChats)
+      setToChats(result?.toChats)
+
+      return messages;
+    } catch (error) {
+      console.error("Error fetching chat data:", error);
+      return null;
+    }
+  }, [user?.email, contactEmails]);
+
+  console.log("fromChats : ", fromChats)
+  console.log("toChats : ", toChats)
 
   useEffect(() => {
     if (user && contactEmails?.to) {
       fetchUserData();
     }
-
   }, [user, contactEmails?.to, fetchUserData]);
 
-  const sendMessage = async (from, to, message, contactTarget) => {
+  const sendMessage = async (
+    from,
+    to,
+    messageText,
+    contactTarget
+  ) => {
+    if (!messageText?.trim()) return;
+
     try {
-      const send = await fetch(`${API_URL}/send-message`, {
+      const response = await fetch(`${API_URL}/send-message`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ from: from, to: to, message: message, contactTarget: contactTarget }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from,
+          to,
+          message: messageText,
+          contactTarget,
+        }),
       });
 
-      const sendData = await send.json()
-
-      const messages = await fetchUserData()
-      messageInput.current.value = ""
-      setSortedChatsWithDate([])
-      socket.emit("send_message", messages);
-    } catch (err) {
-      console.error("Failed to send message:", err);
-    }
-  };
-
-  useEffect(() => {
-    if (chats) {
-      const chats2 = [
-        ...(chats?.from?.chats ?? []).map((c) => ({
-          ...c,
-          receiver: chats?.to?.email
-        })),
-        ...(chats?.to?.chats ?? []).map((c) => ({
-          ...c,
-          receiver: chats?.from?.email
-        }))
-      ];
-
-      const chats3 = chats2.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
-
-      const uniqueDates = chats3.map((chat, index) => {
-        const date = new Date(chat.createdAt)
-        const dateOfMonth = date.getDate()
-        const month = date.getMonth()
-        const year = date.getFullYear()
-
-        return `${dateOfMonth}/${month}/${year}`
-      })
-
-      const uniqueDatesSet = new Set(uniqueDates)
-
-      setChatsDate(uniqueDatesSet)
-
-      setSortedChats(chats3)
-    }
-  }, [chats])
-
-  useEffect(() => {
-    if (chatsDate && sortedChats) {
-      const newChats = []
-
-      for (const date of chatsDate) {
-        const splitDate = date.split("/")
-        const sameDateChats = sortedChats.filter((chat) => {
-          const date = new Date(chat.createdAt)
-          const dateOfMonth = date.getDate()
-          const month = date.getMonth()
-          const year = date.getFullYear()
-
-          if (dateOfMonth == splitDate[0] && month == splitDate[1] && year == splitDate[2]) {
-            return chat
-          }
-        })
-
-        newChats.push({ date: date, chats: sameDateChats })
-
+      if (!response.ok) {
+        throw new Error("Failed to send message");
       }
 
-      setSortedChatsWithDate(newChats)
+      const updatedMessages = await fetchUserData();
+
+      if (messageInput.current) {
+        messageInput.current.value = "";
+      }
+
+      setMessage("");
+
+      if (updatedMessages) {
+        socket.emit("send_message", updatedMessages);
+      }
+    } catch (error) {
+      console.error("Failed to send message:", error);
     }
-  }, [chatsDate, sortedChats])
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'instant' });
   };
-  useEffect(() => {
-    scrollToBottom();
-  }, [sortedChatsWithDate]);
 
   useEffect(() => {
-    socket.on("receive_message", (data) => {
-      setChats(data)
+    if (!chats) return;
+
+    const allChats = [
+      ...(fromChats[0]?.contact1?.chats ?? []).map((chat) => ({
+        ...chat,
+        receiver: fromChats[0]?.contact1?.email,
+      })),
+
+      ...(toChats[0]?.contact2?.chats ?? []).map((chat) => ({
+        ...chat,
+        receiver: toChats[0]?.contact2?.email,
+      })),
+    ];
+
+    allChats.sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() -
+        new Date(b.createdAt).getTime()
+    );
+
+    console.log("allChats : ", allChats)
+
+    const uniqueDates = [
+      ...new Set(
+        allChats.map((chat) => {
+          const date = new Date(chat.createdAt);
+
+          return `${date.getDate()}/${date.getMonth()}/${date.getFullYear()}`;
+        })
+      ),
+    ];
+
+    console.log("uniqueDates : ", uniqueDates)
+
+    setChatsDate(uniqueDates);
+    setSortedChats(allChats);
+  }, [chats, fromChats, toChats]);
+
+  useEffect(() => {
+    const groupedChats = chatsDate.map((dateString) => {
+      const [day, month, year] = dateString.split("/");
+
+      const sameDateChats = sortedChats.filter((chat) => {
+        const date = new Date(chat.createdAt);
+
+        return (
+          date.getDate() === Number(day) &&
+          date.getMonth() === Number(month) &&
+          date.getFullYear() === Number(year)
+        );
+      });
+
+      return {
+        date: dateString,
+        chats: sameDateChats,
+      };
     });
 
+    setSortedChatsWithDate(groupedChats);
+  }, [chatsDate, sortedChats]);
+
+  useEffect(() => {
+    const handleReceiveMessage = (data) => {
+      setChats(data);
+    };
+
+    socket.on("receive_message", handleReceiveMessage);
+
     return () => {
-      socket.off("receive_message");
+      socket.off("receive_message", handleReceiveMessage);
     };
   }, []);
 
   const deleteChat = async (chatToDelete) => {
-    const container = chatsContainerRef.current;
-    const oldScrollTop = container?.scrollTop;
+    const container = document.querySelector(".chat-window");
 
-    const deleteQuery = await fetch(`${API_URL}/delete-chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ _id: chatToDelete._id })
-    })
+    if (!container) {
+      console.error(
+        'Scrollable element with class "chat-window" was not found'
+      );
+      return;
+    }
 
-    const messages = await fetchUserData()
-    setSortedChatsWithDate([])
-    socket.emit("send_message", messages);
+    previousScrollTop.current = container.scrollTop;
 
-    requestAnimationFrame(() => {
-      if (container) {
-        container.scrollTop = oldScrollTop;
+    try {
+      const response = await fetch(`${API_URL}/delete-chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          _id: chatToDelete._id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete chat");
       }
-    });
-  }
+
+      restoreScroll.current = true;
+
+      const updatedMessages = await fetchUserData();
+      console.log("updatedMessages : ", updatedMessages)
+
+      if (updatedMessages) {
+        socket.emit("send_message", updatedMessages);
+      } else {
+        restoreScroll.current = false;
+      }
+    } catch (error) {
+      restoreScroll.current = false;
+      console.error("Error deleting chat:", error);
+    }
+  };
+
+  useLayoutEffect(() => {
+    if (!restoreScroll.current) return;
+
+    const container = document.querySelector(".chat-window");
+
+    if (container) {
+      container.scrollTop = previousScrollTop.current;
+    }
+
+    restoreScroll.current = false;
+  }, [sortedChatsWithDate]);
 
   return (
     <div>
       <div className="p-4">
-
         <table className="table">
           <tbody>
             <tr>
-              <th scope="row">From </th>
+              <th scope="row">From</th>
               <td>{contactEmails?.from}</td>
             </tr>
-            <tr className='chat-receiver'>
-              <th scope="row">To </th>
+
+            <tr className="chat-receiver">
+              <th scope="row">To</th>
               <td>{contactEmails?.to} (You)</td>
             </tr>
           </tbody>
         </table>
 
         <div>
-          {
-            sortedChatsWithDate && sortedChatsWithDate.map((chat, index) => {
-              const d = chat.date
-              const splitDate = d.split("/")
+          {sortedChatsWithDate.map((chatGroup) => {
+            const [day, month, year] =
+              chatGroup.date.split("/");
 
-              return <div key={index} className='chats-box' ref={chatsContainerRef}>
-                <div className='chats-date'>{splitDate[0]}/{Number(splitDate[1]) + 1}/{splitDate[2]}</div>
-                {
-                  chat.chats.map((chat2, index) => {
-                    const date = new Date(chat2.createdAt)
-                    const hour = date.getHours()
-                    const minutes = date.getMinutes()
+            return (
+              <div
+                key={chatGroup.date}
+                className="chats-box"
+              >
+                <div className="chats-date">
+                  {day}/{Number(month) + 1}/{year}
+                </div>
 
-                    return <div key={index} className={`${chat2?.receiver === user?.email ? 'received chat' : 'sent chat'}`}>
-                      <div className={`${chat2?.receiver === user?.email ? 'received-chat' : 'sent-chat'}`}>
-                        {chat2?.message}
+                {chatGroup.chats.map((chat, index) => {
+                  const date = new Date(chat.createdAt);
+                  const hour = date.getHours();
+                  const minutes = String(
+                    date.getMinutes()
+                  ).padStart(2, "0");
+
+                  return (
+                    <div
+                      key={index}
+                      className={
+                        chat.receiver === user?.email
+                          ? "sent chat"
+                          : "received chat"
+                      }
+                    >
+                      <div
+                        className={
+                          chat.receiver === user?.email
+                            ? "sent-chat"
+                            : "received-chat"
+                        }
+                      >
+                        {chat.message}
                       </div>
-                      <span className='chat-time'>{hour}: {minutes}</span>
-                      <div className='delete' onClick={() => {
-                        deleteChat(chat2)
-                      }}><FaDeleteLeft /></div>
+
+                      <span className="chat-time">
+                        {hour}:{minutes}
+                      </span>
+
+                      <div
+                        className="delete"
+                        onClick={() => deleteChat(chat)}
+                      >
+                        <FaDeleteLeft />
+                      </div>
                     </div>
-                  })
-                }
+                  );
+                })}
               </div>
-            })
-          }
+            );
+          })}
         </div>
 
-        <div className='message-input'>
+        <div className="message-input">
           <input
+            value={message}
             onChange={(e) => setMessage(e.target.value)}
             className="border mr-2"
             placeholder="Type a message..."
@@ -269,8 +390,13 @@ const OneToOneChat = ({ contactEmails }) => {
           />
 
           <button
-            onClick={
-              () => sendMessage(contactEmails?.from, contactEmails?.to, message, contactEmails?.contactTarget)
+            onClick={() =>
+              sendMessage(
+                contactEmails?.from,
+                contactEmails?.to,
+                message,
+                contactEmails?.contactTarget
+              )
             }
             className="text-white rounded"
           >
@@ -278,9 +404,7 @@ const OneToOneChat = ({ contactEmails }) => {
           </button>
         </div>
       </div>
-
-      <div ref={messagesEndRef} />
-    </div >
+    </div>
   );
 };
 
