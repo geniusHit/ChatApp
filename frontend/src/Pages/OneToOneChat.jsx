@@ -91,7 +91,7 @@ const OneToOneChat = ({ contactEmails }) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(contactEmails),
+        body: JSON.stringify({...contactEmails, email: user?.email}),
       });
 
       if (!response.ok) {
@@ -252,6 +252,8 @@ const OneToOneChat = ({ contactEmails }) => {
   }, [fetchUserData]);
 
   const deleteChat = async (chatToDelete) => {
+    console.log("chatToDelete : ", chatToDelete)
+    
     const container = document.querySelector(".chat-window");
 
     if (!container) {
@@ -270,7 +272,7 @@ const OneToOneChat = ({ contactEmails }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          _id: chatToDelete._id,
+          _id: chatToDelete._id, contact: chatToDelete?.receiver
         }),
       });
 

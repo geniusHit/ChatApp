@@ -167,7 +167,7 @@ const App = () => {
                   </div>
                   <div className='icon' onClick={() => setCurrentTab("newcontact")}>
                     <MdAccountCircle />
-                    <span className='link-text'>Account</span>
+                    <span className='link-text'>Add Contact</span>
                   </div>
                 </div>
         }
