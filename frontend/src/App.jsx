@@ -69,7 +69,7 @@ const App = () => {
       });
       const contactsData = await contactsRes.json();
       setFrom(contactsData[0]?.contact1?.email)
-      setAllContacts(Array.isArray(contactsData) ? contactsData : []);
+      setAllContacts(contactsData?.contacts);
     } catch (err) {
       console.error("Error fetching chat data:", err);
     }
@@ -108,8 +108,6 @@ const App = () => {
   useEffect(()=> {
     let el =  main?.current
     let el2 = el.getBoundingClientRect()
-    console.log("main.current.scrollTop : ", main?.current)
-    console.log(el2)
   }, [])
 
   return (
@@ -135,16 +133,16 @@ const App = () => {
 
         <div className='contacts'>
           {
-            emails.map((em, index) => {
+            allContacts.map((contact, index) => {
 
               return <div key={index} className='contact' onClick={
                 () => {
                   setCurrentTab("onochat")
-                  setTo(em?.email)
-                  setContactTarget(em?.contactTarget)
+                  setTo(contact?.email)
+                  // setContactTarget(em?.contactTarget)
                 }
               }>
-                {em?.name}
+                {contact?.name}
               </div>
             })
           }

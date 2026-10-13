@@ -18,7 +18,18 @@ const userSchema = mongoose.Schema({
     },
     password: {
         type: String
-    }
+    },
+    contacts: [{
+        email: String,
+        name: String,
+        chats: [
+            {
+                message: String,
+                to: String,
+                createdAt: Date
+            }
+        ]
+    }]
 })
 const usersModel = mongoose.model("user", userSchema)
 exports.addUser = async (req, res) => {
@@ -158,11 +169,11 @@ const oneToOneContactsSchema = mongoose.Schema({
 const oneToOneContactsModel = mongoose.model("oneToOneContacts", oneToOneContactsSchema)
 exports.oneToOneContacts = async (req, res) => {
     try {
-        const newContacts = new oneToOneContactsModel(req.body)
-        await newContacts.save()
+        const { email, name, newUserEmail } = req.body
+        const newUser = await usersModel.findOne({ email: newUserEmail })
+        const newContacts = await usersModel.updateOne({ email: email }, { $push: { contacts: { email: newUser.email, name: newUser.name } } })
 
         res.json(newContacts)
-        res.send()
     } catch (err) {
         console.log(`Contacts not saved : ${err.message}`)
     }
@@ -171,10 +182,11 @@ exports.oneToOneContacts = async (req, res) => {
 exports.sendMessage = async (req, res) => {
     try {
         console.log("req.body : ", req.body)
-        const { from, to, message, contactTarget } = req.body
-        const send = await oneToOneContactsModel.findOneAndUpdate({ "contact1.email": from, "contact2.email": to }, { $push: { "contact1.chats": { message: message, to: "", createdAt: new Date() }, "contact2.chats": { message: message, to: to, createdAt: new Date() } } }, { returnDocument: 'after' })
+        const { from, to, message } = req.body
+        const send = await usersModel.updateOne({ email: from, "contacts.email": to }, { $push: { "contacts.$.chats": { message: message, to: to, createdAt: new Date() } } }, { new: true })
+        const send2 = await usersModel.updateOne({ email: to, "contacts.email": from }, { $push: { "contacts.$.chats": { message: message, to: to, createdAt: new Date() } } }, { new: true })
 
-        res.json({ success: true, message: `Message sent`, data: send })
+        res.json({ success: true, message: `Message sent`, data: { data1: send, data2: send2 } })
     } catch (err) {
         res.json({ success: false, message: `Unable to send message. ${err.message}` })
     }
@@ -183,11 +195,7 @@ exports.sendMessage = async (req, res) => {
 exports.getContacts = async (req, res) => {
     try {
         const { email } = req.body;
-        const contacts = await oneToOneContactsModel.find({
-            $or: [
-                { "contact1.email": email }, { "contact2.email": email }
-            ]
-        })
+        const contacts = await usersModel.findOne({ email: email })
 
         res.json(contacts)
     } catch (err) {
@@ -198,76 +206,21 @@ exports.getContacts = async (req, res) => {
 exports.getChats = async (req, res) => {
     try {
         console.log("req.body from getChats : ", req.body)
-        const { from, to, email } = req.body
-        const chats = await oneToOneContactsModel.aggregate([
-            {
-                $match: {
-                    $or: [
-                        { "contact1.email": email },
-                        { "contact2.email": email }
-                    ]
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    chats: {
-                        $cond: {
-                            if: { $eq: ["$contact1.email", email] },
-                            then: "$contact1.chats",
-                            else: "$contact2.chats"
-                        }
-                    }
-                }
+        const { to, email } = req.body
+        const chats = await usersModel.aggregate([{
+            $match: {
+                email: email,
+                "contacts.email": to
             }
-        ]);
-        const fromChats = await oneToOneContactsModel.aggregate([
-            {
-                $match: {
-                    "contact1.email": from
-                }
-            },
-            {
-                $project: {
-                    "contact1.email": 1,
-                    "contact1.chats": {
-                        $filter: {
-                            input: "$contact1.chats",
-                            as: "chat",
-                            cond: {
-                                $and: [
-                                    { $ne: ["$$chat.to", ""] },
-                                    { $eq: [{ $type: "$$chat.to" }, "string"] }
-                                ]
-                            }
-                        }
-                    }
-                }
+        }])
+        const chats2 = await usersModel.aggregate([{
+            $match: {
+                email: to,
+                "contacts.email": email
             }
-        ]);
-        const toChats = await oneToOneContactsModel.aggregate([
-            {
-                $match: {
-                    "contact1.email": from,
-                    "contact2.email": to,
-                    "contact2.chats.to": to
-                }
-            },
-            {
-                $project: {
-                    "contact2.email": 1,
-                    "contact2.chats": {
-                        $filter: {
-                            input: "$contact2.chats",
-                            as: "chat",
-                            cond: { $eq: ["$$chat.to", to] }
-                        }
-                    }
-                }
-            }
-        ]);
+        }])
 
-        res.json({ chats, fromChats, toChats })
+        res.send({ fromChats: chats, toChats: chats2 })
     } catch (err) {
         res.json({ success: false, message: `Couldn't get chats ${err.message}` })
     }
@@ -286,34 +239,13 @@ exports.logout = async (req, res) => {
 
 exports.deleteChat = async (req, res) => {
     try {
-        const { _id } = req.body
-        console.log("_id : ", _id)
-        const object1 = await oneToOneContactsModel.findOne({
-            $or: [
-                { "contact1.chats._id": _id },
-                { "contact2.chats._id": _id },
-            ]
-        },)
-        console.log("object1 : ", object1)
-        const chatToDelete1 = object1.contact1.chats.filter((chat) => chat._id.equals(_id))
-        console.log("chatToDelete1 : ", chatToDelete1)
-        const chatToDelete2 = object1.contact2.chats.filter((chat) => chat._id.equals(_id))
-        console.log("chatToDelete2 : ", chatToDelete2)
-
-        const deleteChatQuery = await oneToOneContactsModel.updateOne(
-            {
-                $or: [
-                    { "contact1.chats._id": new mongoose.Types.ObjectId(`${_id}`) },
-                    { "contact2.chats._id": new mongoose.Types.ObjectId(`${_id}`) }
-                ]
-            },
-            {
-                $pull: {
-                    "contact1.chats": { _id: _id },
-                    "contact2.chats": { _id: _id }
-                }
+        console.log("req.body from deleteChat : ", req.body)
+        const { _id, from, to } = req.body;
+        const deleteChatQuery = await usersModel.updateOne({ email: from, "contacts.email": to }, {
+            $pull: {
+                "contacts.$.chats": { _id: new mongoose.Types.ObjectId(_id) }
             }
-        )
+        })
 
         res.end()
     } catch (err) {

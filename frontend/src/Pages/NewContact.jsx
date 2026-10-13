@@ -69,14 +69,13 @@ const NewContact = () => {
             }
 
             const result = await getProvidedContact.json()
-            console.log("result : ", result)
 
             const otoContact = await fetch(`${API_URL}/oto-contact`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ contact1: user, contact2: result })
+                body: JSON.stringify({...user, newUserEmail})
             })
 
             setNewUserEmail("")

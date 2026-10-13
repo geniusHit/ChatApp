@@ -91,42 +91,17 @@ const OneToOneChat = ({ contactEmails }) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({...contactEmails, email: user?.email}),
+        body: JSON.stringify({ ...contactEmails, email: user?.email }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch chats");
-      }
-
       const result = await response.json();
-      console.log("result : ", result)
-
-      const messages = {
-        from: {
-          email: result?.chats?.[0]?.contact1?.email,
-          name: result?.chats?.[0]?.contact1?.name,
-          chats: result?.chats?.[0]?.contact1?.chats ?? [],
-        },
-        to: {
-          email: result?.chats?.[0]?.contact2?.email,
-          name: result?.chats?.[0]?.contact2?.name,
-          chats: result?.chats?.[0]?.contact2?.chats ?? [],
-        },
-      };
-
-      setChats(messages);
-      setFromChats(result?.fromChats)
-      setToChats(result?.toChats)
-
-      return messages;
+      setFromChats(result.fromChats[0]?.contacts[0]?.chats)
+      setToChats(result.fromChats[0]?.contacts[0]?.chats)
     } catch (error) {
       console.error("Error fetching chat data:", error);
       return null;
     }
   }, [user?.email, contactEmails]);
-
-  console.log("fromChats : ", fromChats)
-  console.log("toChats : ", toChats)
 
   useEffect(() => {
     if (user && contactEmails?.to) {
@@ -160,6 +135,8 @@ const OneToOneChat = ({ contactEmails }) => {
         throw new Error("Failed to send message");
       }
 
+      const result = await response.json()
+
       const updatedMessages = await fetchUserData();
 
       if (messageInput.current) {
@@ -177,31 +154,9 @@ const OneToOneChat = ({ contactEmails }) => {
   };
 
   useEffect(() => {
-    if (!chats) return;
-
-    const allChats = [
-      ...(fromChats[0]?.contact1?.chats ?? []).map((chat) => ({
-        ...chat,
-        receiver: fromChats[0]?.contact1?.email,
-      })),
-
-      ...(toChats[0]?.contact2?.chats ?? []).map((chat) => ({
-        ...chat,
-        receiver: toChats[0]?.contact2?.email,
-      })),
-    ];
-
-    allChats.sort(
-      (a, b) =>
-        new Date(a.createdAt).getTime() -
-        new Date(b.createdAt).getTime()
-    );
-
-    console.log("allChats : ", allChats)
-
     const uniqueDates = [
       ...new Set(
-        allChats.map((chat) => {
+        fromChats && fromChats.map((chat) => {
           const date = new Date(chat.createdAt);
 
           return `${date.getDate()}/${date.getMonth()}/${date.getFullYear()}`;
@@ -209,17 +164,14 @@ const OneToOneChat = ({ contactEmails }) => {
       ),
     ];
 
-    console.log("uniqueDates : ", uniqueDates)
-
     setChatsDate(uniqueDates);
-    setSortedChats(allChats);
   }, [chats, fromChats, toChats]);
 
   useEffect(() => {
     const groupedChats = chatsDate.map((dateString) => {
       const [day, month, year] = dateString.split("/");
 
-      const sameDateChats = sortedChats.filter((chat) => {
+      const sameDateChats = fromChats.filter((chat) => {
         const date = new Date(chat.createdAt);
 
         return (
@@ -240,7 +192,6 @@ const OneToOneChat = ({ contactEmails }) => {
 
   useEffect(() => {
     const handleReceiveMessage = async (data) => {
-      console.log("Socket message received");
       await fetchUserData();
     };
 
@@ -252,8 +203,6 @@ const OneToOneChat = ({ contactEmails }) => {
   }, [fetchUserData]);
 
   const deleteChat = async (chatToDelete) => {
-    console.log("chatToDelete : ", chatToDelete)
-    
     const container = document.querySelector(".chat-window");
 
     if (!container) {
@@ -272,7 +221,7 @@ const OneToOneChat = ({ contactEmails }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          _id: chatToDelete._id, contact: chatToDelete?.receiver
+          _id: chatToDelete._id, from: user?.email, to: chatToDelete?.to
         }),
       });
 
@@ -283,7 +232,6 @@ const OneToOneChat = ({ contactEmails }) => {
       restoreScroll.current = true;
 
       const updatedMessages = await fetchUserData();
-      console.log("updatedMessages : ", updatedMessages)
 
       if (updatedMessages) {
         socket.emit("send_message", updatedMessages);
@@ -315,7 +263,7 @@ const OneToOneChat = ({ contactEmails }) => {
           <tbody>
             <tr>
               <th scope="row">From</th>
-              <td>{contactEmails?.from}</td>
+              <td>{user?.email}</td>
             </tr>
 
             <tr className="chat-receiver">
@@ -350,16 +298,16 @@ const OneToOneChat = ({ contactEmails }) => {
                     <div
                       key={index}
                       className={
-                        chat.receiver === user?.email
-                          ? "sent chat"
-                          : "received chat"
+                        chat.to === user?.email
+                          ? "received chat"
+                          : "sent chat"
                       }
                     >
                       <div
                         className={
-                          chat.receiver === user?.email
-                            ? "sent-chat"
-                            : "received-chat"
+                          chat.to === user?.email
+                            ? "received-chat"
+                            : "sent-chat"
                         }
                       >
                         {chat.message}
@@ -395,7 +343,7 @@ const OneToOneChat = ({ contactEmails }) => {
           <button
             onClick={() =>
               sendMessage(
-                contactEmails?.from,
+                user?.email,
                 contactEmails?.to,
                 message,
                 contactEmails?.contactTarget
