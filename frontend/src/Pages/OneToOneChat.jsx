@@ -196,6 +196,7 @@ const OneToOneChat = ({ contactEmails }) => {
   useEffect(() => {
     const handleReceiveMessage = async (data) => {
       console.log("data from handleReceiveMessage : ", data)
+      return data;
       // await fetchUserData();
     };
 
