@@ -97,6 +97,7 @@ const OneToOneChat = ({ contactEmails }) => {
       const result = await response.json();
       setFromChats(result.fromChats[0]?.contacts[0]?.chats)
       setToChats(result.fromChats[0]?.contacts[0]?.chats)
+      return result;
     } catch (error) {
       console.error("Error fetching chat data:", error);
       return null;
@@ -138,6 +139,8 @@ const OneToOneChat = ({ contactEmails }) => {
       const result = await response.json()
 
       const updatedMessages = await fetchUserData();
+
+      console.log("updatedMessages : ", updatedMessages)
 
       if (messageInput.current) {
         messageInput.current.value = "";
