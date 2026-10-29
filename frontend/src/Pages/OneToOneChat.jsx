@@ -261,14 +261,14 @@ const OneToOneChat = ({ contactEmails }) => {
       <div className="p-4">
         <table className="table">
           <tbody>
-            <tr>
+            <tr className="chat-receiver">
               <th scope="row">From</th>
-              <td>{user?.email}</td>
+              <td>{user?.email} (You)</td>
             </tr>
 
-            <tr className="chat-receiver">
+            <tr>
               <th scope="row">To</th>
-              <td>{contactEmails?.to} (You)</td>
+              <td>{contactEmails?.to}</td>
             </tr>
           </tbody>
         </table>
