@@ -195,7 +195,8 @@ const OneToOneChat = ({ contactEmails }) => {
 
   useEffect(() => {
     const handleReceiveMessage = async (data) => {
-      await fetchUserData();
+      console.log("data from handleReceiveMessage : ", data)
+      // await fetchUserData();
     };
 
     socket.on("receive_message", handleReceiveMessage);
